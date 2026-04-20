@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<title>AbbNovitas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+:root{--bg:#0d0f14;--s:#161921;--s2:#1e2230;--acc:#e8c547;--acc2:#4fc3f7;--txt:#f0f2f7;--mut:#6b7280;--red:#ef4444;--grn:#22c55e;--brd:rgba(255,255,255,0.07)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;background-image:radial-gradient(ellipse at 20% 0%,rgba(232,197,71,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(79,195,247,.06) 0%,transparent 50%)}
+h1,h2,h3{font-family:'Syne',sans-serif}
+.screen{display:none;min-height:100vh;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+#screen-login{gap:20px;padding-top:40px;align-items:center}
+.logo{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-1px}
+.logo span{color:var(--acc)}
+.wbadge{background:var(--s);border:1px solid var(--brd);border-radius:100px;padding:6px 16px;font-size:.78rem;color:var(--mut);text-align:center}
+.wbadge b{color:var(--acc2)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:480px}
+@media(min-width:500px){.grid{grid-template-columns:repeat(3,1fr);max-width:600px}}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr);max-width:680px}}
+.tile{background:var(--s);border:1px solid var(--brd);border-radius:16px;padding:20px 12px;text-align:center;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;-webkit-user-select:none;user-select:none}
+.tile:active{transform:scale(.97);opacity:.85}
+.tile.empty{border-style:dashed;opacity:.45;cursor:default}
+.tile.slot{border-style:dashed;opacity:.65}
+.tile.slot:active{transform:scale(.97)}
+.av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;position:relative;z-index:1;flex-shrink:0}
+.tn{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;position:relative;z-index:1}
+.tr{font-size:.68rem;color:var(--mut);position:relative;z-index:1}
+.c0{background:linear-gradient(135deg,#e8c547,#f59e0b);color:#0d0f14}
+.c1{background:linear-gradient(135deg,#4fc3f7,#0ea5e9);color:#0d0f14}
+.c2{background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff}
+.c3{background:linear-gradient(135deg,#f472b6,#db2777);color:#fff}
+.c4{background:linear-gradient(135deg,#34d399,#059669);color:#0d0f14}
+.c5{background:linear-gradient(135deg,#fb923c,#ea580c);color:#fff}
+.c6{background:linear-gradient(135deg,#60a5fa,#2563eb);color:#fff}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;z-index:100;padding-bottom:env(safe-area-inset-bottom,0px)}
+.overlay.open{display:flex}
+.modal{background:var(--s);border:1px solid var(--brd);border-radius:24px 24px 0 0;padding:28px 24px;padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;text-align:center}
+@media(min-width:600px){.overlay{align-items:center}.modal{border-radius:24px;max-width:360px;padding-bottom:28px}}
+.modal h2{font-size:1.2rem;margin-bottom:6px}
+.modal p{color:var(--mut);font-size:.85rem;margin-bottom:20px}
+.pi{width:100%;background:var(--s2);border:1px solid var(--brd);border-radius:12px;padding:16px 18px;color:var(--txt);font-size:16px;letter-spacing:3px;text-align:center;outline:none;margin-bottom:14px;-webkit-appearance:none;appearance:none}
+.pi:focus{border-color:var(--acc)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:12px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;transition:all .15s;-webkit-appearance:none;touch-action:manipulation}
+.bp{background:var(--acc);color:#0d0f14;width:100%}.bp:active{opacity:.8}
+.bs{background:var(--s2);color:var(--txt);border:1px solid var(--brd)}.bs:active{opacity:.8}
+.bd{background:var(--red);color:#fff}
+.bg{background:var(--grn);color:#fff}
+.bsm{padding:10px 16px;font-size:.82rem;border-radius:10px}
+.err{color:var(--red);font-size:.82rem;margin-top:8px;min-height:20px}
+#screen-dashboard,#screen-admin{justify-content:flex-start;max-width:700px;margin:0 auto;gap:16px;width:100%}
+#screen-clients{justify-content:flex-start;max-width:500px;margin:0 auto;gap:16px;width:100%}
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--brd);gap:8px}
+.topbar h2{font-size:1.1rem}
+.topbar p{font-size:.75rem;color:var(--mut);margin-top:2px}
+.tbr{display:flex;gap:8px;flex-shrink:0}
+.card{background:var(--s);border:1px solid var(--brd);border-radius:16px;padding:18px;width:100%}
+.card h3{font-size:.95rem;margin-bottom:16px;color:var(--acc)}
+.frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fg{flex:1;min-width:120px;display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+.inp{background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:12px 14px;color:var(--txt);font-size:16px;outline:none;width:100%;font-family:'DM Sans',sans-serif;-webkit-appearance:none;appearance:none;min-height:46px}
+.inp:focus{border-color:var(--acc)}
+select.inp option{background:#1e2230;color:#f0f2f7}
+.twrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+.wtbl{width:100%;border-collapse:collapse;font-size:.82rem;min-width:380px}
+.wtbl th{text-align:left;padding:8px 10px;color:var(--mut);font-weight:500;border-bottom:1px solid var(--brd);white-space:nowrap}
+.wtbl td{padding:10px;border-bottom:1px solid rgba(255,255,255,.04)}
+.wtbl tr:last-child td{border-bottom:none}
+.hc{color:var(--acc);font-weight:700;font-family:'Syne',sans-serif}
+.trow{display:flex;justify-content:space-between;align-items:center;padding-top:14px;margin-top:8px;border-top:1px solid var(--brd)}
+.th{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--acc)}
+.tag{display:inline-block;padding:2px 10px;border-radius:100px;font-size:.7rem;background:rgba(79,195,247,.15);color:var(--acc2);white-space:nowrap}
+.slots{display:flex;flex-direction:column;gap:10px}
+.sitem{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--brd);border-radius:12px;padding:12px 14px;flex-wrap:wrap}
+.rbtns{display:flex;gap:10px;flex-wrap:wrap}
+.rbtns .btn{flex:1;min-width:140px}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.screen.active>*{animation:fu .3s ease both}
+.screen.active>*:nth-child(2){animation-delay:.04s}
+.screen.active>*:nth-child(3){animation-delay:.08s}
+.screen.active>*:nth-child(4){animation-delay:.12s}
+.screen.active>*:nth-child(5){animation-delay:.16s}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="logo">Abb<span>Novitas</span></div>
+  <div class="wbadge">Tydzie&#324; <b id="wd"></b> &middot; <span id="dd"></span></div>
+  <div class="grid" id="tiles"></div>
+  <div style="width:100%;max-width:680px">
+    <div class="tile" onclick="showClientsScreen()" style="border-color:rgba(79,195,247,.3);background:linear-gradient(135deg,rgba(79,195,247,.05),rgba(79,195,247,.02))">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="av c1" style="font-size:1.5rem">&#128203;</div>
+        <div style="text-align:left">
+          <div class="tn">Lista klient&#243;w</div>
+          <div class="tr">Przegl&#261;daj i aktualizuj</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="color:var(--mut);font-size:.78rem">Wybierz sw&#243;j profil aby si&#281; zalogowa&#263;</p>
+</div>
+
+<!-- CLIENTS -->
+<div id="screen-clients" class="screen">
+  <div style="width:100%;max-width:500px;display:flex;flex-direction:column;gap:20px">
+    <div class="topbar">
+      <div><h2>&#128203; Lista klient&#243;w</h2><p>Wsp&#243;lna dla wszystkich</p></div>
+      <button class="btn bs bsm" onclick="showScreen('screen-login');buildTiles()">&#8592; Wr&#243;&#263;</button>
+    </div>
+    <div class="card">
+      <h3>Aktywni klienci</h3>
+      <div id="pclist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="pcnew" class="inp" placeholder="Nazwa nowego klienta">
+        <button class="btn bp bsm" onclick="pcAdd()">+ Dodaj</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dashboard" class="screen">
+  <div class="topbar">
+    <div><h2 id="dname">Witaj</h2><p id="dweek"></p></div>
+    <div class="tbr">
+      <button class="btn bs bsm" onclick="goAdmin()" id="abtn" style="display:none">&#9881; Admin</button>
+      <button class="btn bs bsm" onclick="logout()">&#8592; Wyloguj</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>&#128203; Dodaj godziny dnia</h3>
+    <div class="frow">
+      <div class="fg"><label>Dzie&#324;</label>
+        <select id="iday" class="inp">
+          <option>Poniedzia&#322;ek</option><option>Wtorek</option><option>&#346;roda</option>
+          <option>Czwartek</option><option>Pi&#261;tek</option><option>Sobota</option><option>Niedziela</option>
+        </select>
+      </div>
+      <div class="fg"><label>Start</label><input type="time" id="ist" class="inp" value="07:00"></div>
+      <div class="fg"><label>Koniec</label><input type="time" id="ien" class="inp" value="15:00"></div>
+    </div>
+    <div class="frow">
+      <div class="fg" style="flex:2"><label>Klient</label><select id="icli" class="inp"></select></div>
+      <div class="fg"><label>Notatka</label><input type="text" id="inote" class="inp" placeholder="Opcjonalnie..."></div>
+    </div>
+    <button class="btn bp" id="addbtn" onclick="addEntry()">+ Dodaj wpis</button>
+  </div>
+  <div class="card">
+    <h3>&#128197; Podsumowanie tygodnia</h3>
+    <div class="twrap">
+      <table class="wtbl">
+        <thead><tr><th>Dzie&#324;</th><th>Godziny</th><th>Klient</th><th>Notatka</th><th></th></tr></thead>
+        <tbody id="etbl"></tbody>
+      </table>
+    </div>
+    <div class="trow">
+      <span style="color:var(--mut);font-size:.85rem">&#321;&#261;cznie:</span>
+      <span class="th" id="ttl">0h 0min</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>&#128231; Wy&#347;lij raport do ksi&#281;gowej</h3>
+    <p style="color:var(--mut);font-size:.85rem;margin-bottom:16px">Raport na <b>bw@awcompany.dk</b> jako plik Excel.</p>
+    <div style="border-bottom:1px solid var(--brd);padding-bottom:16px;margin-bottom:16px">
+      <p style="font-size:.8rem;color:var(--acc);font-family:'Syne',sans-serif;margin-bottom:10px">RAPORT TYGODNIOWY</p>
+      <div class="rbtns">
+        <button class="btn bg" onclick="dlExcel()">&#8595; Pobierz Excel</button>
+        <button class="btn bp" onclick="sendReport()">&#9993; Wy&#347;lij mailem</button>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:.8rem;color:var(--acc2);font-family:'Syne',sans-serif;margin-bottom:10px">RAPORT MIE&#346;I&#280;CZNY</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="month" id="msel" class="inp" style="max-width:180px;min-width:140px">
+        <button class="btn bg" onclick="dlMonthly()" style="flex:1;min-width:140px">&#8595; Pobierz Excel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="screen">
+  <div class="topbar">
+    <div><h2>&#9881; Panel Administratora</h2><p>Zarz&#261;dzanie pracownikami</p></div>
+    <button class="btn bs bsm" onclick="showDash()">&#8592; Wr&#243;&#263;</button>
+  </div>
+  <div class="card">
+    <h3>&#128101; Wolne sloty</h3>
+    <div class="slots" id="aslots"></div>
+  </div>
+  <div class="card">
+    <h3>&#128273; Zmie&#324; has&#322;o pracownika</h3>
+    <div class="frow">
+      <div class="fg"><label>Pracownik</label><select id="pww" class="inp"></select></div>
+      <div class="fg"><label>Nowe has&#322;o</label><input type="password" id="pwn" class="inp" placeholder="min. 4 znaki"></div>
+    </div>
+    <button class="btn bp bsm" onclick="changePwd()">Zmie&#324; has&#322;o</button>
+    <p id="pwmsg" class="err" style="color:var(--grn)"></p>
+  </div>
+  <div class="card">
+    <h3>&#128203; Lista klient&#243;w <small style="color:var(--mut);font-weight:400;font-size:.75rem">&#8211; kliknij nazw&#281; by edytowa&#263;</small></h3>
+    <div id="aclist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="acnew" class="inp" placeholder="Nazwa nowego klienta">
+      <button class="btn bp bsm" onclick="acAdd()">+ Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="overlay" id="pmod">
+  <div class="modal">
+    <h2 id="ptit">Zaloguj si&#281;</h2>
+    <p id="psub">Podaj swoje has&#322;o</p>
+    <input type="password" id="pin" class="pi" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn bp" onclick="doLogin()">Zaloguj</button>
+    <p class="err" id="perr"></p>
+    <button class="btn bs" style="width:100%;margin-top:8px" onclick="closeModal()">Anuluj</button>
+  </div>
+</div>
+
+<!-- ADD WORKER MODAL -->
+<div class="overlay" id="awmod">
+  <div class="modal">
+    <h2>Dodaj pracownika</h2>
+    <p>Wype&#322;nij dane nowego pracownika</p>
+    <input type="text" id="awn" class="pi" placeholder="Imi&#281;" style="letter-spacing:0;margin-bottom:10px" maxlength="20">
+    <input type="password" id="awp" class="pi" placeholder="Has&#322;o" style="letter-spacing:0;margin-bottom:16px" maxlength="20">
+    <button class="btn bp" onclick="saveWorker()">Zapisz</button>
+    <p class="err" id="awerr"></p>
+    <button class="btn bs" style="width:100%;margin-top:8px" onclick="document.getElementById('awmod').classList.remove('open')">Anuluj</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const KEY = '$2a$10$Uod.HIbxBcdn.kAa/BV5aeFd8gnyAx0hCW3BFlijPEj709Xvh5eAS';
+const BIN_C = '69e49d64aaba88219715581b';
+const BIN_E = '69e62b69856a682189533cf4';
+const URL_C = 'https://api.jsonbin.io/v3/b/'+BIN_C;
+const URL_E = 'https://api.jsonbin.io/v3/b/'+BIN_E;
+const HDR = {'Content-Type':'application/json','X-Master-Key':KEY};
+
+// ── STATE ──
+let CU = null;
+let LS = null;
+let CC = [];
+let CE = {};
+
+// ── STORAGE ──
+const ld = (k,d) => { try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d} };
+const sv = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+
+// ── WORKERS – imiona jako kody, nie jako tekst ──
+function getWorkers() {
+  const N = (...c) => c.map(x=>String.fromCharCode(x)).join('');
+  const saved = ld('wv3',null);
+  const def = [
+    {id:'adrian',   name:N(65,100,114,105,97,110),          pwd:'admin123',admin:true, color:'c0',active:true},
+    {id:'wiktor',   name:N(87,105,107,116,111,114),          pwd:'admin123',admin:false,color:'c1',active:true},
+    {id:'grzesiek', name:N(71,114,122,101,115,105,101,107),  pwd:'admin123',admin:false,color:'c2',active:true},
+    {id:'karol',    name:N(75,97,114,111,108),               pwd:'admin123',admin:false,color:'c3',active:true},
+    {id:'artur',    name:N(65,114,116,117,114),              pwd:'admin123',admin:false,color:'c4',active:true},
+    {id:'slot1',    name:'',pwd:'',admin:false,color:'c5',active:false},
+    {id:'slot2',    name:'',pwd:'',admin:false,color:'c6',active:false},
+  ];
+  if(!saved) return def;
+  return def.map(d=>{
+    const s=saved.find(x=>x.id===d.id);
+    if(!s) return d;
+    return {...d, pwd:s.pwd||d.pwd, active:s.active, name:d.id.startsWith('slot')?s.name:d.name};
+  });
+}
+function saveWorkers(w) { sv('wv3',w); }
+
+// ── CLOUD CLIENTS ──
+async function fetchClients() {
+  try {
+    const r = await fetch(URL_C+'/latest',{headers:{'X-Master-Key':KEY}});
+    const d = await r.json();
+    CC = d.record.clients||[];
+  } catch(e) {
+    CC = ld('cc',[]).map(c=>typeof c==='string'?c:c.name);
+    if(!CC.length) CC = ['Hansen Byg','Nielsen VVS','Petersen El','Inny'];
+  }
+}
+async function saveClients(list) {
+  CC = list;
+  try { await fetch(URL_C,{method:'PUT',headers:HDR,body:JSON.stringify({clients:list})}); }
+  catch(e) { sv('cc',list); }
+}
+
+// ── CLOUD ENTRIES ──
+async function fetchEntries() {
+  try {
+    const r = await fetch(URL_E+'/latest',{headers:{'X-Master-Key':KEY}});
+    const d = await r.json();
+    CE = d.record.entries||{};
+    // Migracja z localStorage
+    let mig=false;
+    getWorkers().forEach(w=>{
+      if(!w.active) return;
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(k&&k.startsWith('entries_'+w.id+'_')){
+          const wk=k.replace('entries_'+w.id+'_','');
+          const ck=w.id+'_'+wk;
+          if(!CE[ck]){
+            try{const loc=JSON.parse(localStorage.getItem(k)||'[]');if(loc.length){CE[ck]=loc;mig=true;}}catch(e){}
+          }
+        }
+      }
+    });
+    if(mig) await fetch(URL_E,{method:'PUT',headers:HDR,body:JSON.stringify({entries:CE})});
+  } catch(e) {}
+}
+async function saveEntries() {
+  try { await fetch(URL_E,{method:'PUT',headers:HDR,body:JSON.stringify({entries:CE})}); }
+  catch(e) {}
+}
+function getE(wid,wk) { return CE[wid+'_'+wk]||ld('entries_'+wid+'_'+wk,[]); }
+function setE(wid,wk,arr) {
+  CE[wid+'_'+wk]=arr;
+  sv('entries_'+wid+'_'+wk,arr);
+  saveEntries();
+}
+
+// ── WEEK ──
+function getWeek() {
+  const now=new Date();
+  const day=now.getDay()===0?6:now.getDay()-1;
+  const mon=new Date(now); mon.setDate(now.getDate()-day);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  const fmt=d=>String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+  const yr=mon.getFullYear();
+  const tmp=new Date(mon); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+3-((tmp.getDay()+6)%7));
+  const w1=new Date(tmp.getFullYear(),0,4);
+  const wn=1+Math.round(((tmp-w1)/86400000-3+((w1.getDay()+6)%7))/7);
+  return {wn,yr,key:yr+'_W'+wn,label:wn+'/'+yr,dates:fmt(mon)+' \u2013 '+fmt(sun)+'.'+sun.getFullYear(),mon};
+}
+
+// ── BUILD TILES ──
+function buildTiles() {
+  const W=getWorkers(), wd=getWeek();
+  document.getElementById('wd').textContent=wd.label;
+  document.getElementById('dd').textContent=wd.dates;
+  const c=document.getElementById('tiles');
+  c.innerHTML='';
+  W.forEach(w=>{
+    const d=document.createElement('div');
+    if(!w.active){
+      d.className='tile slot';
+      d.innerHTML='<div class="av" style="background:var(--s2);color:var(--mut);font-size:1.8rem">+</div><div class="tn" style="color:var(--mut)">Wolny slot</div><div class="tr">Kliknij (admin)</div>';
+      d.onclick=()=>openSlot(w.id);
+    } else {
+      d.className='tile';
+      const av=document.createElement('div');
+      av.className='av '+w.color;
+      av.textContent=w.name.slice(0,2).toUpperCase();
+      const nm=document.createElement('div');
+      nm.className='tn';
+      nm.textContent=w.name;
+      const rl=document.createElement('div');
+      rl.className='tr';
+      rl.textContent=w.admin?'\u2B50 Administrator':'';
+      d.append(av,nm,rl);
+      d.onclick=()=>openLogin(w.id);
+    }
+    c.appendChild(d);
+  });
+}
+
+// ── LOGIN ──
+let LT=null;
+function openLogin(id){
+  const w=getWorkers().find(x=>x.id===id);
+  if(!w||!w.active) return;
+  LT=id;
+  document.getElementById('ptit').textContent='Witaj, '+w.name+'!';
+  document.getElementById('psub').textContent='Podaj swoje has\u0142o';
+  document.getElementById('pin').value='';
+  document.getElementById('perr').textContent='';
+  document.getElementById('pmod').classList.add('open');
+  setTimeout(()=>document.getElementById('pin').focus(),100);
+}
+function closeModal(){ document.getElementById('pmod').classList.remove('open'); LT=null; }
+function doLogin(){
+  if(!LT) return;
+  const w=getWorkers().find(x=>x.id===LT);
+  if(!w){ document.getElementById('perr').textContent='B\u0142\u0105d \u2013 od\u015bwie\u017c stron\u0119'; return; }
+  const p=document.getElementById('pin').value;
+  if(p===w.pwd){ document.getElementById('pmod').classList.remove('open'); CU=w; showDash(); }
+  else document.getElementById('perr').textContent='\u274C Nieprawid\u0142owe has\u0142o';
+}
+function logout(){ CU=null; showScreen('screen-login'); buildTiles(); }
+
+// ── DASHBOARD ──
+async function showDash(){
+  if(!CU){logout();return;}
+  showScreen('screen-dashboard');
+  const w=getWeek();
+  document.getElementById('dname').textContent='Witaj, '+CU.name+'!';
+  document.getElementById('dweek').textContent='Tydzie\u0144 '+w.label+' \u00b7 '+w.dates;
+  document.getElementById('abtn').style.display=CU.admin?'':'none';
+  const days=['Niedziela','Poniedzia\u0142ek','Wtorek','\u015aroda','Czwartek','Pi\u0105tek','Sobota'];
+  const today=days[new Date().getDay()];
+  const sel=document.getElementById('iday');
+  for(let i=0;i<sel.options.length;i++) if(sel.options[i].text===today){sel.selectedIndex=i;break;}
+  document.getElementById('etbl').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:20px">\u23F3 \u0141adowanie...</td></tr>';
+  await Promise.all([fetchClients(),fetchEntries()]);
+  buildCliSel();
+  renderEntries();
+  const mn=document.getElementById('msel');
+  if(mn){const n=new Date();mn.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
+}
+function buildCliSel(){
+  const s=document.getElementById('icli');
+  if(!CC.length){s.innerHTML='<option>Brak klient\u00f3w</option>';return;}
+  s.innerHTML=CC.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+}
+function addEntry(){
+  const w=getWeek();
+  const day=document.getElementById('iday').value;
+  const st=document.getElementById('ist').value;
+  const en=document.getElementById('ien').value;
+  const cli=document.getElementById('icli').value;
+  const note=document.getElementById('inote').value;
+  if(!st||!en){alert('Podaj godziny!');return;}
+  const [sh,sm]=st.split(':').map(Number);
+  const [eh,em]=en.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0){alert('Koniec musi by\u0107 p\u00f3\u017aniejszy ni\u017c start!');return;}
+  const arr=getE(CU.id,w.key);
+  arr.push({day,st,en,cli,note,mins});
+  setE(CU.id,w.key,arr);
+  document.getElementById('inote').value='';
+  const btn=document.getElementById('addbtn');
+  btn.textContent='\u2601 Synchronizacja...';
+  btn.disabled=true;
+  setTimeout(()=>{btn.textContent='+ Dodaj wpis';btn.disabled=false;},1800);
+  renderEntries();
+}
+function delEntry(i){
+  const w=getWeek();
+  const arr=getE(CU.id,w.key);
+  arr.splice(i,1);
+  setE(CU.id,w.key,arr);
+  renderEntries();
+}
+function renderEntries(){
+  const w=getWeek();
+  const arr=getE(CU.id,w.key);
+  const tb=document.getElementById('etbl');
+  tb.innerHTML='';
+  let tot=0;
+  arr.forEach((e,i)=>{
+    const h=Math.floor(e.mins/60),m=e.mins%60;
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+e.day+'</td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td><button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 10px">\u2715</button></td>';
+    tb.appendChild(tr);
+    tot+=e.mins;
+  });
+  document.getElementById('ttl').textContent=Math.floor(tot/60)+'h '+tot%60+'min';
+}
+
+// ── EXCEL ──
+function buildXLS(entries,name,label,dates){
+  const byC={};
+  entries.forEach(e=>{ if(!byC[e.cli]) byC[e.cli]=[]; byC[e.cli].push(e); });
+  const data=[['Weekly Report \u2013 '+name],['Week: '+label+' ('+dates+')'],[]];
+  let tot=0;
+  Object.keys(byC).forEach(cli=>{
+    data.push(['CLIENT: '+cli]);
+    data.push(['Day','Start','End','Hours','Note']);
+    let cm=0;
+    byC[cli].forEach(e=>{
+      const h=Math.floor(e.mins/60),m=e.mins%60;
+      data.push([e.day,e.st,e.en,parseFloat((h+m/60).toFixed(2)),e.note||'']);
+      cm+=e.mins; tot+=e.mins;
+    });
+    data.push(['Total '+cli,'','',parseFloat((Math.floor(cm/60)+cm%60/60).toFixed(2)),'']);
+    data.push([]);
+  });
+  data.push(['\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501','','','','']);
+  data.push(['TOTAL ALL CLIENTS','','',parseFloat((Math.floor(tot/60)+tot%60/60).toFixed(2)),'']);
+  return {data,tot};
+}
+function dlExcel(){
+  const w=getWeek();
+  const arr=getE(CU.id,w.key);
+  if(!arr.length){alert('Brak wpis\u00f3w!');return;}
+  const {data}=buildXLS(arr,CU.name,w.label,w.dates);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[20,10,10,14,28].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Report');
+  XLSX.writeFile(wb,'Report_'+CU.name+'_Week'+w.wn+'_'+w.yr+'.xlsx');
+}
+function sendReport(){
+  const w=getWeek();
+  const arr=getE(CU.id,w.key);
+  if(!arr.length){alert('Brak wpis\u00f3w!');return;}
+  dlExcel();
+  const {tot}=buildXLS(arr,CU.name,w.label,w.dates);
+  const byC={};
+  arr.forEach(e=>{ byC[e.cli]=(byC[e.cli]||0)+e.mins; });
+  let body='Weekly Report - '+CU.name+'\nWeek: '+w.label+' ('+w.dates+')\n\n';
+  Object.keys(byC).forEach(c=>{ const h=Math.floor(byC[c]/60),m=byC[c]%60; body+=c+': '+h+'h '+m+'min\n'; });
+  body+='\nTOTAL: '+Math.floor(tot/60)+'h '+tot%60+'min\n\nPlease attach the Excel file.';
+  window.open('mailto:bw@awcompany.dk?subject='+encodeURIComponent('Report '+CU.name+' \u2013 Week '+w.label)+'&body='+encodeURIComponent(body));
+}
+function dlMonthly(){
+  const mv=document.getElementById('msel').value;
+  if(!mv){alert('Wybierz miesi\u0105c!');return;}
+  const [yr,mo]=mv.split('-').map(Number);
+  const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const keys=[];
+  for(let wn=1;wn<=53;wn++){
+    const jan4=new Date(yr,0,4);
+    const mon=new Date(jan4); mon.setDate(jan4.getDate()-((jan4.getDay()+6)%7)+(wn-1)*7);
+    const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+    if(mon.getMonth()+1===mo||sun.getMonth()+1===mo) keys.push({key:yr+'_W'+wn,wn,mon,sun});
+  }
+  const all=[];
+  keys.forEach(k=>{ getE(CU.id,k.key).forEach(e=>all.push({...e,wn:k.wn})); });
+  if(!all.length){alert('Brak wpis\u00f3w w tym miesi\u0105cu!');return;}
+  const data=[['Monthly Report \u2013 '+CU.name],['Month: '+MN[mo-1]+' '+yr],[]];
+  data.push(['Week','Day','Start','End','Hours','Client','Note']);
+  let tot=0,lw=null,wm=0;
+  all.forEach(e=>{
+    if(lw!==null&&e.wn!==lw){ data.push(['','Week '+lw+' total:','','',parseFloat((Math.floor(wm/60)+wm%60/60).toFixed(2)),'','']); data.push([]); wm=0; }
+    const h=Math.floor(e.mins/60),m=e.mins%60;
+    data.push(['W'+e.wn,e.day,e.st,e.en,parseFloat((h+m/60).toFixed(2)),e.cli,e.note||'']);
+    tot+=e.mins; wm+=e.mins; lw=e.wn;
+  });
+  data.push(['','Week '+lw+' total:','','',parseFloat((Math.floor(wm/60)+wm%60/60).toFixed(2)),'','']);
+  data.push([]);
+  data.push(['TOTAL','','','',parseFloat((Math.floor(tot/60)+tot%60/60).toFixed(2)),'','']);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[8,14,10,10,14,20,24].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,MN[mo-1]+' '+yr);
+  XLSX.writeFile(wb,'Report_'+CU.name+'_'+MN[mo-1]+'_'+yr+'.xlsx');
+}
+
+// ── CLIENTS SCREEN ──
+function showClientsScreen(){
+  showScreen('screen-clients');
+  renderPCList();
+}
+function renderPCList(){
+  const c=document.getElementById('pclist');
+  if(!CC.length){c.innerHTML='<p style="color:var(--mut);font-size:.85rem">Brak klient\u00f3w. Dodaj pierwszego!</p>';return;}
+  c.innerHTML=CC.map((n,i)=>'<div style="display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:10px 14px"><span style="color:var(--acc);font-family:Syne,sans-serif;font-weight:700;min-width:22px">'+(i+1)+'.</span><input type="text" value="'+n+'" onchange="pcRename('+i+',this.value)" style="background:none;border:none;color:var(--txt);font-family:DM Sans,sans-serif;font-size:.95rem;outline:none;flex:1"><button onclick="pcDel('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;flex-shrink:0">\u00d7</button></div>').join('');
+}
+async function pcAdd(){
+  const n=document.getElementById('pcnew').value.trim();
+  if(!n) return;
+  if(CC.includes(n)){alert('Klient ju\u017c istnieje!');return;}
+  await saveClients([...CC,n]);
+  document.getElementById('pcnew').value='';
+  renderPCList(); buildCliSel();
+}
+async function pcRename(i,v){ if(!v.trim()) return; const l=[...CC]; l[i]=v.trim(); await saveClients(l); buildCliSel(); }
+async function pcDel(i){ if(!confirm('Usun\u0105\u0107 tego klienta?')) return; const l=CC.filter((_,x)=>x!==i); await saveClients(l); renderPCList(); buildCliSel(); }
+
+// ── ADMIN ──
+async function goAdmin(){
+  if(!CU?.admin) return;
+  showScreen('screen-admin');
+  buildSlots(); buildPwdSel();
+  await fetchClients(); renderACList();
+}
+function buildSlots(){
+  const W=getWorkers().filter(w=>!w.active);
+  const c=document.getElementById('aslots');
+  if(!W.length){c.innerHTML='<p style="color:var(--mut);font-size:.85rem">Wszystkie sloty s\u0105 zaj\u0119te.</p>';return;}
+  c.innerHTML=W.map((w,i)=>'<div class="sitem"><span style="color:var(--mut);font-size:.8rem;min-width:20px">'+(i+1)+'</span><span style="color:var(--mut);flex:1;font-size:.85rem">Wolny slot</span><button class="btn bp bsm" onclick="openSlot(\''+w.id+'\')">+ Dodaj</button></div>').join('');
+}
+let AS=null;
+function openSlot(id){
+  AS=id;
+  document.getElementById('awn').value='';
+  document.getElementById('awp').value='';
+  document.getElementById('awerr').textContent='';
+  document.getElementById('awmod').classList.add('open');
+  setTimeout(()=>document.getElementById('awn').focus(),100);
+}
+function saveWorker(){
+  const name=document.getElementById('awn').value.trim();
+  const pwd=document.getElementById('awp').value;
+  if(!name){document.getElementById('awerr').textContent='Podaj imi\u0119!';return;}
+  if(!pwd||pwd.length<4){document.getElementById('awerr').textContent='Min. 4 znaki!';return;}
+  const W=getWorkers();
+  const i=W.findIndex(w=>w.id===AS);
+  if(i===-1) return;
+  W[i].name=name; W[i].pwd=pwd; W[i].active=true;
+  saveWorkers(W);
+  document.getElementById('awmod').classList.remove('open');
+  buildSlots(); buildPwdSel(); buildTiles();
+  alert('Pracownik "'+name+'" zosta\u0142 dodany!');
+}
+function buildPwdSel(){
+  const s=document.getElementById('pww');
+  s.innerHTML=getWorkers().filter(w=>w.active).map(w=>'<option value="'+w.id+'">'+w.name+'</option>').join('');
+}
+function changePwd(){
+  const id=document.getElementById('pww').value;
+  const pwd=document.getElementById('pwn').value;
+  if(!pwd||pwd.length<4){document.getElementById('pwmsg').style.color='var(--red)';document.getElementById('pwmsg').textContent='Min. 4 znaki!';return;}
+  const W=getWorkers();
+  const i=W.findIndex(w=>w.id===id);
+  W[i].pwd=pwd; saveWorkers(W);
+  document.getElementById('pwmsg').style.color='var(--grn)';
+  document.getElementById('pwmsg').textContent='\u2705 Has\u0142o zmienione!';
+  document.getElementById('pwn').value='';
+  setTimeout(()=>document.getElementById('pwmsg').textContent='',3000);
+}
+function renderACList(){
+  const c=document.getElementById('aclist');
+  c.innerHTML=CC.map((n,i)=>'<div style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--brd);border-radius:10px;padding:8px 12px"><input type="text" value="'+n+'" onchange="acRename('+i+',this.value)" style="background:none;border:none;color:var(--txt);font-family:DM Sans,sans-serif;font-size:.9rem;outline:none;flex:1;min-width:80px"><button onclick="acDel('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.1rem;flex-shrink:0">\u00d7</button></div>').join('');
+}
+async function acAdd(){ const n=document.getElementById('acnew').value.trim(); if(!n) return; if(CC.includes(n)){alert('Ju\u017c istnieje!');return;} await saveClients([...CC,n]); document.getElementById('acnew').value=''; renderACList(); buildCliSel(); }
+async function acRename(i,v){ if(!v.trim()) return; const l=[...CC]; l[i]=v.trim(); await saveClients(l); buildCliSel(); }
+async function acDel(i){ const l=CC.filter((_,x)=>x!==i); await saveClients(l); renderACList(); buildCliSel(); }
+
+// ── SCREEN ──
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+// ── INIT ──
+buildTiles();
+fetchClients();
+</script>
+</body>
+</html>
