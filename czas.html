@@ -173,6 +173,36 @@ select.inp option{background:#1e2230;color:#f0f2f7}
       <span class="th" id="ttl">0h 0min</span>
     </div>
   </div>
+ 
+  <!-- KALKULATOR WYNAGRODZENIA – tylko dla pracownika, nie trafia do raportu -->
+  <div class="card" id="salarycard">
+    <h3>&#128176; Kalkulator wynagrodzenia</h3>
+    <p style="color:var(--mut);font-size:.78rem;margin-bottom:14px">Tylko dla Ciebie &ndash; nie pojawia si&#281; w raporcie Excel</p>
+    <div class="frow">
+      <div class="fg">
+        <label>Stawka godzinowa (DKK)</label>
+        <input type="number" id="salRate" class="inp" placeholder="np. 200" min="0" oninput="calcSalary()">
+      </div>
+      <div class="fg">
+        <label>Podatek (%)</label>
+        <input type="number" id="salTax" class="inp" placeholder="np. 28" min="0" max="100" value="28" oninput="calcSalary()">
+      </div>
+    </div>
+    <div id="salResult" style="display:none;background:var(--s2);border-radius:12px;padding:16px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
+        <span style="color:var(--mut);font-size:.85rem">Brutto (przed podatkiem)</span>
+        <span id="salBrutto" style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;color:var(--txt)">0 DKK</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
+        <span style="color:var(--mut);font-size:.85rem">Podatek</span>
+        <span id="salTaxAmt" style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;color:var(--red)">0 DKK</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--mut);font-size:.85rem">Netto (do wyp&#322;aty)</span>
+        <span id="salNetto" style="font-family:Syne,sans-serif;font-weight:800;font-size:1.4rem;color:var(--grn)">0 DKK</span>
+      </div>
+    </div>
+  </div>
   <div class="card">
     <h3>&#128231; Wy&#347;lij raport do ksi&#281;gowej</h3>
     <p style="color:var(--mut);font-size:.85rem;margin-bottom:16px">Raport na <b>bw@awcompany.dk</b> jako plik Excel.</p>
@@ -427,6 +457,7 @@ async function showDash(){
   await Promise.all([fetchClients(),fetchEntries()]);
   buildCliSel();
   renderEntries();
+  loadSalaryRate();
   const mn=document.getElementById('msel');
   if(mn){const n=new Date();mn.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
 }
@@ -599,9 +630,43 @@ function renderEntries(){
     tot+=e.mins;
   });
   document.getElementById('ttl').textContent=Math.floor(tot/60)+'h '+tot%60+'min';
+  // Odswież kalkulator po zmianie godzin
+  calcSalary();
 }
  
-// ── EXCEL ──
+// ── KALKULATOR WYNAGRODZENIA ──
+function calcSalary(){
+  const rateEl=document.getElementById('salRate');
+  const taxEl=document.getElementById('salTax');
+  if(!rateEl||!taxEl) return;
+  const rate=parseFloat(rateEl.value)||0;
+  const tax=parseFloat(taxEl.value)||0;
+  const ttlText=document.getElementById('ttl').textContent;
+  const hMatch=ttlText.match(/(\d+)h/);
+  const mMatch=ttlText.match(/(\d+)min/);
+  const totalH=(hMatch?parseInt(hMatch[1]):0)+(mMatch?parseInt(mMatch[1]):0)/60;
+  if(rate<=0){document.getElementById('salResult').style.display='none';return;}
+  const brutto=Math.round(totalH*rate);
+  const taxAmt=Math.round(brutto*tax/100);
+  const netto=brutto-taxAmt;
+  document.getElementById('salBrutto').textContent=brutto.toLocaleString('da-DK')+' DKK';
+  document.getElementById('salTaxAmt').textContent='-'+taxAmt.toLocaleString('da-DK')+' DKK';
+  document.getElementById('salNetto').textContent=netto.toLocaleString('da-DK')+' DKK';
+  document.getElementById('salResult').style.display='block';
+  if(CU) sv('rate_'+CU.id,{rate,tax});
+}
+ 
+function loadSalaryRate(){
+  if(!CU) return;
+  const saved=ld('rate_'+CU.id,null);
+  if(saved){
+    const re=document.getElementById('salRate');
+    const te=document.getElementById('salTax');
+    if(re) re.value=saved.rate||'';
+    if(te) te.value=saved.tax!==undefined?saved.tax:28;
+    calcSalary();
+  }
+}
 function buildXLS(entries,name,label,dates){
   const byC={};
   entries.forEach(e=>{ if(!byC[e.cli]) byC[e.cli]=[]; byC[e.cli].push(e); });
@@ -772,3 +837,4 @@ fetchClients();
 </script>
 </body>
 </html>
+ 
