@@ -176,41 +176,44 @@ select.inp option{background:#1e2230;color:#f0f2f7}
  
   <!-- KALKULATOR WYNAGRODZENIA – tylko dla pracownika, nie trafia do raportu -->
   <div class="card" id="salarycard">
-    <h3>&#128176; Kalkulator wynagrodzenia</h3>
+    <h3 id="salTitle">&#128176; Kalkulator wynagrodzenia</h3>
     <p style="color:var(--mut);font-size:.78rem;margin-bottom:14px">Tylko dla Ciebie &ndash; nie pojawia si&#281; w raporcie Excel</p>
     <div class="frow">
       <div class="fg">
         <label>Stawka godzinowa (DKK)</label>
         <input type="number" id="salRate" class="inp" placeholder="np. 200" min="0" oninput="calcSalary()">
       </div>
-      <div class="fg">
+      <div class="fg" id="salTaxGroup">
         <label>Podatek (%)</label>
         <input type="number" id="salTax" class="inp" placeholder="np. 28" min="0" max="100" value="28" oninput="calcSalary()">
       </div>
     </div>
     <div id="salResult" style="display:none;background:var(--s2);border-radius:12px;padding:16px;margin-top:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
+      <div id="salBruttoRow" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
         <span style="color:var(--mut);font-size:.85rem">Brutto (przed podatkiem)</span>
         <span id="salBrutto" style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;color:var(--txt)">0 DKK</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
+      <div id="salTaxRow" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
         <span style="color:var(--mut);font-size:.85rem">Podatek</span>
         <span id="salTaxAmt" style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;color:var(--red)">0 DKK</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="color:var(--mut);font-size:.85rem">Netto (do wyp&#322;aty)</span>
+        <span id="salNettoLabel" style="color:var(--mut);font-size:.85rem">Netto (do wyp&#322;aty)</span>
         <span id="salNetto" style="font-family:Syne,sans-serif;font-weight:800;font-size:1.4rem;color:var(--grn)">0 DKK</span>
       </div>
     </div>
   </div>
-  <div class="card">
-    <h3>&#128231; Wy&#347;lij raport do ksi&#281;gowej</h3>
-    <p style="color:var(--mut);font-size:.85rem;margin-bottom:16px">Raport na <b>bw@awcompany.dk</b> jako plik Excel.</p>
+  <div class="card" id="reportcard">
+    <h3>&#128231; Raport Excel</h3>
+    <p style="color:var(--mut);font-size:.85rem;margin-bottom:16px">Pobierz raport jako plik Excel.</p>
+    <div id="emailSection">
+      <p style="color:var(--mut);font-size:.82rem;margin-bottom:10px">Wy&#347;lij na <b>bw@awcompany.dk</b></p>
+    </div>
     <div style="border-bottom:1px solid var(--brd);padding-bottom:16px;margin-bottom:16px">
       <p style="font-size:.8rem;color:var(--acc);font-family:'Syne',sans-serif;margin-bottom:10px">RAPORT TYGODNIOWY</p>
       <div class="rbtns">
         <button class="btn bg" onclick="dlExcel()">&#8595; Pobierz Excel</button>
-        <button class="btn bp" onclick="sendReport()">&#9993; Wy&#347;lij mailem</button>
+        <button id="sendMailBtn" class="btn bp" onclick="sendReport()">&#9993; Wy&#347;lij mailem</button>
       </div>
     </div>
     <div>
@@ -257,8 +260,24 @@ select.inp option{background:#1e2230;color:#f0f2f7}
   <div class="modal">
     <h2 id="ptit">Zaloguj si&#281;</h2>
     <p id="psub">Podaj swoje has&#322;o</p>
-    <input type="password" id="pin" class="pi" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn bp" onclick="doLogin()">Zaloguj</button>
+    <input type="password" id="pin" class="pi" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="20" onkeydown="if(event.key==='Enter')checkPin()">
+    <button class="btn bp" onclick="checkPin()">Dalej &#8594;</button>
+    <!-- Wybor trybu – pojawia sie po poprawnym hasle -->
+    <div id="modeChoice" style="display:none;margin-top:16px">
+      <p style="color:var(--mut);font-size:.85rem;margin-bottom:12px">Wybierz tryb pracy:</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn bp" style="flex:1;flex-direction:column;gap:4px;padding:16px 10px" onclick="doLogin('brutto')">
+          <span style="font-size:1.2rem">&#128181;</span>
+          <span>Brutto</span>
+          <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + podatek</span>
+        </button>
+        <button class="btn bs" style="flex:1;flex-direction:column;gap:4px;padding:16px 10px;border-color:var(--grn);color:var(--grn)" onclick="doLogin('netto')">
+          <span style="font-size:1.2rem">&#128176;</span>
+          <span>Netto</span>
+          <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + stawka</span>
+        </button>
+      </div>
+    </div>
     <p class="err" id="perr"></p>
     <button class="btn bs" style="width:100%;margin-top:8px" onclick="closeModal()">Anuluj</button>
   </div>
@@ -432,14 +451,33 @@ function openLogin(id){
   document.getElementById('pmod').classList.add('open');
   setTimeout(()=>document.getElementById('pin').focus(),100);
 }
-function closeModal(){ document.getElementById('pmod').classList.remove('open'); LT=null; }
-function doLogin(){
+function closeModal(){ document.getElementById('pmod').classList.remove('open'); LT=null; document.getElementById('modeChoice').style.display='none'; }
+ 
+function checkPin(){
   if(!LT) return;
   const w=getWorkers().find(x=>x.id===LT);
   if(!w){ document.getElementById('perr').textContent='B\u0142\u0105d \u2013 od\u015bwie\u017c stron\u0119'; return; }
   const p=document.getElementById('pin').value;
-  if(p===w.pwd){ document.getElementById('pmod').classList.remove('open'); CU=w; showDash(); }
-  else document.getElementById('perr').textContent='\u274C Nieprawid\u0142owe has\u0142o';
+  if(p===w.pwd){
+    document.getElementById('perr').textContent='';
+    // Pokaz wybor trybu
+    document.getElementById('modeChoice').style.display='block';
+    document.querySelector('#pmod .btn.bp').style.display='none'; // ukryj przycisk Dalej
+  } else {
+    document.getElementById('perr').textContent='\u274C Nieprawid\u0142owe has\u0142o';
+  }
+}
+ 
+function doLogin(mode){
+  if(!LT) return;
+  const w=getWorkers().find(x=>x.id===LT);
+  if(!w) return;
+  document.getElementById('pmod').classList.remove('open');
+  document.getElementById('modeChoice').style.display='none';
+  document.querySelector('#pmod .btn.bp').style.display='';
+  CU=w;
+  CU.mode=mode; // 'brutto' lub 'netto'
+  showDash();
 }
 function logout(){ CU=null; showScreen('screen-login'); buildTiles(); }
  
@@ -449,6 +487,12 @@ async function showDash(){
   showScreen('screen-dashboard');
   updateWeekNav();
   document.getElementById('abtn').style.display=CU.admin?'':'none';
+  // W trybie netto ukryj tylko przycisk wysylki mailem
+  const sendBtn=document.getElementById('sendMailBtn');
+  const emailSec=document.getElementById('emailSection');
+  const isNetto=CU.mode==='netto';
+  if(sendBtn) sendBtn.style.display=isNetto?'none':'';
+  if(emailSec) emailSec.style.display=isNetto?'none':'';
   const days=['\u0143Niedziela','Poniedzia\u0142ek','Wtorek','\u015aroda','Czwartek','Pi\u0105tek','Sobota'];
   const today=days[new Date().getDay()];
   const sel=document.getElementById('iday');
@@ -465,6 +509,10 @@ async function showDash(){
 function updateWeekNav(){
   const w=getWeek();
   document.getElementById('dname').textContent='Witaj, '+CU.name+'!';
+  const modeBadge=CU.mode==='netto'
+    ?'<span style="background:rgba(34,197,94,.15);color:var(--grn);border-radius:100px;padding:2px 10px;font-size:.72rem;font-family:Syne,sans-serif;font-weight:700;margin-left:8px">NETTO</span>'
+    :'<span style="background:rgba(232,197,71,.15);color:var(--acc);border-radius:100px;padding:2px 10px;font-size:.72rem;font-family:Syne,sans-serif;font-weight:700;margin-left:8px">BRUTTO</span>';
+  document.getElementById('dname').innerHTML='Witaj, '+CU.name+'! '+modeBadge;
   document.getElementById('dweek').textContent='Tydzie\u0144 '+w.label+' \u00b7 '+w.dates;
   const lbl=document.getElementById('weekLabel');
   if(lbl) lbl.textContent=weekOffset===0?'Biezacy tydzie\u0144':(weekOffset<0?Math.abs(weekOffset)+' tyg. wstecz':'');
@@ -635,12 +683,25 @@ function renderEntries(){
 }
  
 // ── KALKULATOR WYNAGRODZENIA ──
+function setupSalaryUI(){
+  if(!CU) return;
+  const isNetto = CU.mode==='netto';
+  // Tytuł
+  document.getElementById('salTitle').textContent = isNetto ? '\u{1F4B0} Kalkulator netto' : '\u{1F4B0} Kalkulator brutto';
+  // Ukryj/pokaz pole podatku
+  document.getElementById('salTaxGroup').style.display = isNetto ? 'none' : '';
+  // Ukryj/pokaz wiersze w wyniku
+  document.getElementById('salBruttoRow').style.display = isNetto ? 'none' : '';
+  document.getElementById('salTaxRow').style.display = isNetto ? 'none' : '';
+  document.getElementById('salNettoLabel').textContent = isNetto ? 'Zarobek netto' : 'Netto (do wyp\u0142aty)';
+}
+ 
 function calcSalary(){
   const rateEl=document.getElementById('salRate');
   const taxEl=document.getElementById('salTax');
-  if(!rateEl||!taxEl) return;
+  if(!rateEl) return;
   const rate=parseFloat(rateEl.value)||0;
-  const tax=parseFloat(taxEl.value)||0;
+  const tax=CU&&CU.mode==='netto'?0:(parseFloat(taxEl?taxEl.value:0)||0);
   const ttlText=document.getElementById('ttl').textContent;
   const hMatch=ttlText.match(/(\d+)h/);
   const mMatch=ttlText.match(/(\d+)min/);
@@ -649,21 +710,22 @@ function calcSalary(){
   const brutto=Math.round(totalH*rate);
   const taxAmt=Math.round(brutto*tax/100);
   const netto=brutto-taxAmt;
-  document.getElementById('salBrutto').textContent=brutto.toLocaleString('da-DK')+' DKK';
-  document.getElementById('salTaxAmt').textContent='-'+taxAmt.toLocaleString('da-DK')+' DKK';
+  if(document.getElementById('salBrutto')) document.getElementById('salBrutto').textContent=brutto.toLocaleString('da-DK')+' DKK';
+  if(document.getElementById('salTaxAmt')) document.getElementById('salTaxAmt').textContent='-'+taxAmt.toLocaleString('da-DK')+' DKK';
   document.getElementById('salNetto').textContent=netto.toLocaleString('da-DK')+' DKK';
   document.getElementById('salResult').style.display='block';
-  if(CU) sv('rate_'+CU.id,{rate,tax});
+  if(CU) sv('rate_'+CU.id+'_'+(CU.mode||'brutto'),{rate,tax});
 }
  
 function loadSalaryRate(){
   if(!CU) return;
-  const saved=ld('rate_'+CU.id,null);
+  setupSalaryUI();
+  const saved=ld('rate_'+CU.id+'_'+(CU.mode||'brutto'),null);
   if(saved){
     const re=document.getElementById('salRate');
     const te=document.getElementById('salTax');
     if(re) re.value=saved.rate||'';
-    if(te) te.value=saved.tax!==undefined?saved.tax:28;
+    if(te&&CU.mode!=='netto') te.value=saved.tax!==undefined?saved.tax:28;
     calcSalary();
   }
 }
@@ -837,4 +899,3 @@ fetchClients();
 </script>
 </body>
 </html>
- 
