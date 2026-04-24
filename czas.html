@@ -89,7 +89,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
 </style>
 </head>
 <body>
-
+ 
 <!-- LOGIN -->
 <div id="screen-login" class="screen active">
   <div class="logo">Abb<span>Novitas</span></div>
@@ -108,7 +108,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
   </div>
   <p style="color:var(--mut);font-size:.78rem">Wybierz sw&#243;j profil aby si&#281; zalogowa&#263;</p>
 </div>
-
+ 
 <!-- CLIENTS -->
 <div id="screen-clients" class="screen">
   <div style="width:100%;max-width:500px;display:flex;flex-direction:column;gap:20px">
@@ -126,7 +126,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     </div>
   </div>
 </div>
-
+ 
 <!-- DASHBOARD -->
 <div id="screen-dashboard" class="screen">
   <div class="topbar">
@@ -136,7 +136,13 @@ select.inp option{background:#1e2230;color:#f0f2f7}
       <button class="btn bs bsm" onclick="logout()">&#8592; Wyloguj</button>
     </div>
   </div>
-  <div class="card">
+  <!-- NAWIGACJA TYGODNI -->
+  <div style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0">
+    <button id="wprev" class="btn bs bsm" onclick="weekPrev()">&#8592; Poprzedni</button>
+    <span id="weekLabel" style="font-family:Syne,sans-serif;font-size:.85rem;color:var(--acc2);min-width:120px;text-align:center"></span>
+    <button id="wnext" class="btn bs bsm" onclick="weekNext()">Nast&#281;pny &#8594;</button>
+  </div>
+  <div class="card" id="addcard">
     <h3>&#128203; Dodaj godziny dnia</h3>
     <div class="frow">
       <div class="fg"><label>Dzie&#324;</label>
@@ -186,7 +192,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     </div>
   </div>
 </div>
-
+ 
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
   <div class="topbar">
@@ -215,7 +221,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     </div>
   </div>
 </div>
-
+ 
 <!-- PIN MODAL -->
 <div class="overlay" id="pmod">
   <div class="modal">
@@ -227,7 +233,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     <button class="btn bs" style="width:100%;margin-top:8px" onclick="closeModal()">Anuluj</button>
   </div>
 </div>
-
+ 
 <!-- ADD WORKER MODAL -->
 <div class="overlay" id="awmod">
   <div class="modal">
@@ -240,7 +246,7 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     <button class="btn bs" style="width:100%;margin-top:8px" onclick="document.getElementById('awmod').classList.remove('open')">Anuluj</button>
   </div>
 </div>
-
+ 
 <script>
 // ── CONFIG ──
 const KEY = '$2a$10$Uod.HIbxBcdn.kAa/BV5aeFd8gnyAx0hCW3BFlijPEj709Xvh5eAS';
@@ -249,17 +255,17 @@ const BIN_E = '69e62b69856a682189533cf4';
 const URL_C = 'https://api.jsonbin.io/v3/b/'+BIN_C;
 const URL_E = 'https://api.jsonbin.io/v3/b/'+BIN_E;
 const HDR = {'Content-Type':'application/json','X-Master-Key':KEY};
-
+ 
 // ── STATE ──
 let CU = null;
 let LS = null;
 let CC = [];
 let CE = {};
-
+ 
 // ── STORAGE ──
 const ld = (k,d) => { try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d} };
 const sv = (k,v) => localStorage.setItem(k,JSON.stringify(v));
-
+ 
 // ── WORKERS – imiona jako kody, nie jako tekst ──
 function getWorkers() {
   const N = (...c) => c.map(x=>String.fromCharCode(x)).join('');
@@ -281,7 +287,7 @@ function getWorkers() {
   });
 }
 function saveWorkers(w) { sv('wv3',w); }
-
+ 
 // ── CLOUD CLIENTS ──
 async function fetchClients() {
   try {
@@ -298,7 +304,7 @@ async function saveClients(list) {
   try { await fetch(URL_C,{method:'PUT',headers:HDR,body:JSON.stringify({clients:list})}); }
   catch(e) { sv('cc',list); }
 }
-
+ 
 // ── CLOUD ENTRIES ──
 async function fetchEntries() {
   try {
@@ -333,10 +339,13 @@ function setE(wid,wk,arr) {
   sv('entries_'+wid+'_'+wk,arr);
   saveEntries();
 }
-
+ 
 // ── WEEK ──
-function getWeek() {
+let weekOffset=0; // 0=biezacy, -1=poprzedni, itd.
+ 
+function getWeekByOffset(offset){
   const now=new Date();
+  now.setDate(now.getDate()+offset*7);
   const day=now.getDay()===0?6:now.getDay()-1;
   const mon=new Date(now); mon.setDate(now.getDate()-day);
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
@@ -345,9 +354,10 @@ function getWeek() {
   const tmp=new Date(mon); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+3-((tmp.getDay()+6)%7));
   const w1=new Date(tmp.getFullYear(),0,4);
   const wn=1+Math.round(((tmp-w1)/86400000-3+((w1.getDay()+6)%7))/7);
-  return {wn,yr,key:yr+'_W'+wn,label:wn+'/'+yr,dates:fmt(mon)+' \u2013 '+fmt(sun)+'.'+sun.getFullYear(),mon};
+  return {wn,yr,key:yr+'_W'+wn,label:wn+'/'+yr,dates:fmt(mon)+' \u2013 '+fmt(sun)+'.'+sun.getFullYear(),mon,sun,monObj:mon,sunObj:sun};
 }
-
+function getWeek(){ return getWeekByOffset(weekOffset); }
+ 
 // ── BUILD TILES ──
 function buildTiles() {
   const W=getWorkers(), wd=getWeek();
@@ -378,7 +388,7 @@ function buildTiles() {
     c.appendChild(d);
   });
 }
-
+ 
 // ── LOGIN ──
 let LT=null;
 function openLogin(id){
@@ -402,31 +412,47 @@ function doLogin(){
   else document.getElementById('perr').textContent='\u274C Nieprawid\u0142owe has\u0142o';
 }
 function logout(){ CU=null; showScreen('screen-login'); buildTiles(); }
-
+ 
 // ── DASHBOARD ──
 async function showDash(){
   if(!CU){logout();return;}
   showScreen('screen-dashboard');
-  const w=getWeek();
-  document.getElementById('dname').textContent='Witaj, '+CU.name+'!';
-  document.getElementById('dweek').textContent='Tydzie\u0144 '+w.label+' \u00b7 '+w.dates;
+  updateWeekNav();
   document.getElementById('abtn').style.display=CU.admin?'':'none';
-  const days=['Niedziela','Poniedzia\u0142ek','Wtorek','\u015aroda','Czwartek','Pi\u0105tek','Sobota'];
+  const days=['\u0143Niedziela','Poniedzia\u0142ek','Wtorek','\u015aroda','Czwartek','Pi\u0105tek','Sobota'];
   const today=days[new Date().getDay()];
   const sel=document.getElementById('iday');
   for(let i=0;i<sel.options.length;i++) if(sel.options[i].text===today){sel.selectedIndex=i;break;}
-  document.getElementById('etbl').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:20px">\u23F3 \u0141adowanie...</td></tr>';
+  document.getElementById('etbl').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:20px">\u23F3 \u0141adowanie...</td></tr>';
   await Promise.all([fetchClients(),fetchEntries()]);
   buildCliSel();
   renderEntries();
   const mn=document.getElementById('msel');
   if(mn){const n=new Date();mn.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
 }
+ 
+function updateWeekNav(){
+  const w=getWeek();
+  document.getElementById('dname').textContent='Witaj, '+CU.name+'!';
+  document.getElementById('dweek').textContent='Tydzie\u0144 '+w.label+' \u00b7 '+w.dates;
+  const lbl=document.getElementById('weekLabel');
+  if(lbl) lbl.textContent=weekOffset===0?'Biezacy tydzie\u0144':(weekOffset<0?Math.abs(weekOffset)+' tyg. wstecz':'');
+  const nxt=document.getElementById('wnext');
+  if(nxt){nxt.disabled=weekOffset>=0;nxt.style.opacity=weekOffset>=0?'0.3':'1';}
+  const addCard=document.getElementById('addcard');
+  if(addCard) addCard.style.display=weekOffset===0?'':'none';
+}
+ 
+function weekPrev(){ weekOffset--; updateWeekNav(); renderEntries(); }
+function weekNext(){ if(weekOffset>=0) return; weekOffset++; updateWeekNav(); renderEntries(); }
 function buildCliSel(){
   const s=document.getElementById('icli');
   if(!CC.length){s.innerHTML='<option>Brak klient\u00f3w</option>';return;}
   s.innerHTML=CC.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
 }
+// ── DZIEN ORDER ──
+const DAY_ORDER=['Poniedzia\u0142ek','Wtorek','\u015aroda','Czwartek','Pi\u0105tek','Sobota','Niedziela'];
+ 
 function addEntry(){
   const w=getWeek();
   const day=document.getElementById('iday').value;
@@ -441,37 +467,140 @@ function addEntry(){
   if(mins<=0){alert('Koniec musi by\u0107 p\u00f3\u017aniejszy ni\u017c start!');return;}
   const arr=getE(CU.id,w.key);
   arr.push({day,st,en,cli,note,mins});
+  // Sortuj chronologicznie
+  arr.sort((a,b)=>{
+    const di=DAY_ORDER.indexOf(a.day)-DAY_ORDER.indexOf(b.day);
+    if(di!==0) return di;
+    return a.st.localeCompare(b.st);
+  });
   setE(CU.id,w.key,arr);
   document.getElementById('inote').value='';
   const btn=document.getElementById('addbtn');
-  btn.textContent='\u2601 Synchronizacja...';
+  btn.textContent='\u2601 Zapisywanie...';
   btn.disabled=true;
   setTimeout(()=>{btn.textContent='+ Dodaj wpis';btn.disabled=false;},1800);
   renderEntries();
 }
+ 
+let lastDeleted=null;
+let undoTimer=null;
+ 
 function delEntry(i){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
+  lastDeleted={entry:{...arr[i]},idx:i,wkey:w.key};
   arr.splice(i,1);
   setE(CU.id,w.key,arr);
   renderEntries();
+  // Pokaz przycisk cofnij
+  showUndo();
 }
+ 
+function showUndo(){
+  let ub=document.getElementById('undobar');
+  if(!ub){
+    ub=document.createElement('div');
+    ub.id='undobar';
+    ub.style.cssText='position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#1e2230;border:1px solid rgba(232,197,71,.4);border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.4);font-family:DM Sans,sans-serif;font-size:.9rem;color:#f0f2f7;white-space:nowrap';
+    document.body.appendChild(ub);
+  }
+  if(undoTimer) clearTimeout(undoTimer);
+  ub.innerHTML='\u26A0\uFE0F Wpis usuni\u0119ty <button onclick="undoDel()" style="background:#e8c547;color:#0d0f14;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:.85rem">Cofnij</button>';
+  ub.style.display='flex';
+  undoTimer=setTimeout(()=>{ub.style.display='none';lastDeleted=null;},5000);
+}
+ 
+function undoDel(){
+  if(!lastDeleted) return;
+  clearTimeout(undoTimer);
+  document.getElementById('undobar').style.display='none';
+  const arr=getE(CU.id,lastDeleted.wkey);
+  arr.splice(lastDeleted.idx,0,lastDeleted.entry);
+  arr.sort((a,b)=>{
+    const di=DAY_ORDER.indexOf(a.day)-DAY_ORDER.indexOf(b.day);
+    if(di!==0) return di;
+    return a.st.localeCompare(b.st);
+  });
+  setE(CU.id,lastDeleted.wkey,arr);
+  lastDeleted=null;
+  renderEntries();
+}
+ 
+// ── EDIT ──
+let editIdx=null;
+function editEntry(i){
+  const w=getWeek();
+  const arr=getE(CU.id,w.key);
+  const e=arr[i];
+  editIdx=i;
+  // Wypelnij formularz danymi
+  const sel=document.getElementById('iday');
+  for(let j=0;j<sel.options.length;j++) if(sel.options[j].value===e.day){sel.selectedIndex=j;break;}
+  document.getElementById('ist').value=e.st;
+  document.getElementById('ien').value=e.en;
+  const cs=document.getElementById('icli');
+  for(let j=0;j<cs.options.length;j++) if(cs.options[j].value===e.cli){cs.selectedIndex=j;break;}
+  document.getElementById('inote').value=e.note||'';
+  // Zmien przycisk
+  const btn=document.getElementById('addbtn');
+  btn.textContent='\u270F Zapisz zmiany';
+  btn.style.background='#4fc3f7';
+  btn.onclick=saveEdit;
+  document.getElementById('addbtn').scrollIntoView({behavior:'smooth',block:'center'});
+}
+ 
+function saveEdit(){
+  const w=getWeek();
+  const day=document.getElementById('iday').value;
+  const st=document.getElementById('ist').value;
+  const en=document.getElementById('ien').value;
+  const cli=document.getElementById('icli').value;
+  const note=document.getElementById('inote').value;
+  if(!st||!en){alert('Podaj godziny!');return;}
+  const [sh,sm]=st.split(':').map(Number);
+  const [eh,em]=en.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0){alert('Koniec musi by\u0107 p\u00f3\u017aniejszy ni\u017c start!');return;}
+  const arr=getE(CU.id,w.key);
+  arr[editIdx]={day,st,en,cli,note,mins};
+  arr.sort((a,b)=>{
+    const di=DAY_ORDER.indexOf(a.day)-DAY_ORDER.indexOf(b.day);
+    if(di!==0) return di;
+    return a.st.localeCompare(b.st);
+  });
+  setE(CU.id,w.key,arr);
+  // Reset przycisku
+  const btn=document.getElementById('addbtn');
+  btn.textContent='+ Dodaj wpis';
+  btn.style.background='';
+  btn.onclick=addEntry;
+  document.getElementById('inote').value='';
+  editIdx=null;
+  renderEntries();
+}
+ 
 function renderEntries(){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
   const tb=document.getElementById('etbl');
   tb.innerHTML='';
   let tot=0;
+  const isCurrentWeek=weekOffset===0;
+  if(!arr.length){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:20px;font-size:.85rem">Brak wpis\u00f3w w tym tygodniu</td></tr>';
+  }
   arr.forEach((e,i)=>{
     const h=Math.floor(e.mins/60),m=e.mins%60;
     const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+e.day+'</td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td><button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 10px">\u2715</button></td>';
+    const editBtn=isCurrentWeek?'<button class="btn bs bsm" onclick="editEntry('+i+')" style="color:var(--acc2);padding:4px 8px;margin-right:4px">\u270F</button>':'';
+    const delBtn=isCurrentWeek?'<button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 8px">\u2715</button>':'';
+    tr.innerHTML='<td>'+e.day+'</td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td style="white-space:nowrap">'+editBtn+delBtn+'</td>';
     tb.appendChild(tr);
     tot+=e.mins;
   });
   document.getElementById('ttl').textContent=Math.floor(tot/60)+'h '+tot%60+'min';
 }
-
+ 
 // ── EXCEL ──
 function buildXLS(entries,name,label,dates){
   const byC={};
@@ -503,7 +632,8 @@ function dlExcel(){
   const ws=XLSX.utils.aoa_to_sheet(data);
   ws['!cols']=[20,10,10,14,28].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Report');
-  XLSX.writeFile(wb,'Report_'+CU.name+'_Week'+w.wn+'_'+w.yr+'.xlsx');
+  const fd=w.dates.replace(/\s/g,'').replace(/\./g,'-').replace('–','-');
+  XLSX.writeFile(wb,'Report_'+CU.name+'_W'+w.wn+'_'+fd+'.xlsx');
 }
 function sendReport(){
   const w=getWeek();
@@ -551,7 +681,7 @@ function dlMonthly(){
   XLSX.utils.book_append_sheet(wb,ws,MN[mo-1]+' '+yr);
   XLSX.writeFile(wb,'Report_'+CU.name+'_'+MN[mo-1]+'_'+yr+'.xlsx');
 }
-
+ 
 // ── CLIENTS SCREEN ──
 function showClientsScreen(){
   showScreen('screen-clients');
@@ -572,7 +702,7 @@ async function pcAdd(){
 }
 async function pcRename(i,v){ if(!v.trim()) return; const l=[...CC]; l[i]=v.trim(); await saveClients(l); buildCliSel(); }
 async function pcDel(i){ if(!confirm('Usun\u0105\u0107 tego klienta?')) return; const l=CC.filter((_,x)=>x!==i); await saveClients(l); renderPCList(); buildCliSel(); }
-
+ 
 // ── ADMIN ──
 async function goAdmin(){
   if(!CU?.admin) return;
@@ -632,10 +762,10 @@ function renderACList(){
 async function acAdd(){ const n=document.getElementById('acnew').value.trim(); if(!n) return; if(CC.includes(n)){alert('Ju\u017c istnieje!');return;} await saveClients([...CC,n]); document.getElementById('acnew').value=''; renderACList(); buildCliSel(); }
 async function acRename(i,v){ if(!v.trim()) return; const l=[...CC]; l[i]=v.trim(); await saveClients(l); buildCliSel(); }
 async function acDel(i){ const l=CC.filter((_,x)=>x!==i); await saveClients(l); renderACList(); buildCliSel(); }
-
+ 
 // ── SCREEN ──
 function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-
+ 
 // ── INIT ──
 buildTiles();
 fetchClients();
