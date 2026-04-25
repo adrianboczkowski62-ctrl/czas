@@ -188,6 +188,8 @@ select.inp option{background:#1e2230;color:#f0f2f7}
         <input type="number" id="salTax" class="inp" placeholder="np. 28" min="0" max="100" value="28" oninput="calcSalary()">
       </div>
     </div>
+    <button class="btn bp bsm" id="salSaveBtn" onclick="saveSalaryRate()" style="margin-bottom:14px;width:100%">&#128190; Zapisz stawkę na stałe</button>
+    <div id="salSavedInfo" style="display:none;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:var(--grn)"></div>
     <div id="salResult" style="display:none;background:var(--s2);border-radius:12px;padding:16px;margin-top:4px">
       <div id="salBruttoRow" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--brd)">
         <span style="color:var(--mut);font-size:.85rem">Brutto (przed podatkiem)</span>
@@ -360,7 +362,7 @@ async function fetchEntries() {
     const r = await fetch(URL_E+'/latest',{headers:{'X-Master-Key':KEY}});
     const d = await r.json();
     CE = d.record.entries||{};
-    // Migracja z localStorage
+    // Migracja starych danych (bez trybu) -> brutto
     let mig=false;
     getWorkers().forEach(w=>{
       if(!w.active) return;
@@ -368,9 +370,11 @@ async function fetchEntries() {
         const k=localStorage.key(i);
         if(k&&k.startsWith('entries_'+w.id+'_')){
           const wk=k.replace('entries_'+w.id+'_','');
-          const ck=w.id+'_'+wk;
-          if(!CE[ck]){
-            try{const loc=JSON.parse(localStorage.getItem(k)||'[]');if(loc.length){CE[ck]=loc;mig=true;}}catch(e){}
+          // Tylko jesli to stary klucz (bez 'brutto' lub 'netto' w nazwie)
+          if(wk.includes('brutto')||wk.includes('netto')) continue;
+          const cloudKey=w.id+'_brutto_'+wk;
+          if(!CE[cloudKey]){
+            try{const loc=JSON.parse(localStorage.getItem(k)||'[]');if(loc.length){CE[cloudKey]=loc;mig=true;}}catch(e){}
           }
         }
       }
@@ -382,10 +386,23 @@ async function saveEntries() {
   try { await fetch(URL_E,{method:'PUT',headers:HDR,body:JSON.stringify({entries:CE})}); }
   catch(e) {}
 }
-function getE(wid,wk) { return CE[wid+'_'+wk]||ld('entries_'+wid+'_'+wk,[]); }
+function getE(wid,wk) {
+  const mode = CU ? (CU.mode||'brutto') : 'brutto';
+  const key = wid+'_'+mode+'_'+wk;
+  const legacyKey = wid+'_'+wk; // stary klucz bez trybu
+  // Jesli jest nowy klucz – uzyj go, jesli nie – sprawdz stary (tylko dla brutto)
+  if(CE[key]) return CE[key];
+  if(mode==='brutto' && CE[legacyKey]) return CE[legacyKey];
+  // localStorage fallback
+  if(mode==='brutto') return ld('entries_'+legacyKey,[]);
+  return ld('entries_'+key,[]);
+}
+ 
 function setE(wid,wk,arr) {
-  CE[wid+'_'+wk]=arr;
-  sv('entries_'+wid+'_'+wk,arr);
+  const mode = CU ? (CU.mode||'brutto') : 'brutto';
+  const key = wid+'_'+mode+'_'+wk;
+  CE[key]=arr;
+  sv('entries_'+key,arr);
   saveEntries();
 }
  
@@ -686,14 +703,31 @@ function renderEntries(){
 function setupSalaryUI(){
   if(!CU) return;
   const isNetto = CU.mode==='netto';
-  // Tytuł
   document.getElementById('salTitle').textContent = isNetto ? '\u{1F4B0} Kalkulator netto' : '\u{1F4B0} Kalkulator brutto';
-  // Ukryj/pokaz pole podatku
   document.getElementById('salTaxGroup').style.display = isNetto ? 'none' : '';
-  // Ukryj/pokaz wiersze w wyniku
   document.getElementById('salBruttoRow').style.display = isNetto ? 'none' : '';
   document.getElementById('salTaxRow').style.display = isNetto ? 'none' : '';
   document.getElementById('salNettoLabel').textContent = isNetto ? 'Zarobek netto' : 'Netto (do wyp\u0142aty)';
+  // Przycisk zapisu tylko w brutto
+  const saveBtn = document.getElementById('salSaveBtn');
+  if(saveBtn) saveBtn.style.display = isNetto ? 'none' : '';
+}
+ 
+function saveSalaryRate(){
+  const rate = parseFloat(document.getElementById('salRate').value)||0;
+  const tax = parseFloat(document.getElementById('salTax').value)||0;
+  if(rate<=0){ alert('Wpisz stawkę godzinową!'); return; }
+  const key = 'rate_'+CU.id+'_'+(CU.mode||'brutto');
+  sv(key, {rate, tax});
+  // Pokaz potwierdzenie
+  const info = document.getElementById('salSavedInfo');
+  info.style.display = 'block';
+  info.textContent = '\u2705 Zapisano: '+rate+' DKK/h, podatek '+tax+'% \u2013 kalkulator b\u0119dzie si\u0119 aktualizowa\u0107 automatycznie';
+  // Zmien przycisk
+  const btn = document.getElementById('salSaveBtn');
+  btn.textContent = '\u2705 Stawka zapisana \u2013 zmie\u0144';
+  btn.style.background = 'var(--grn)';
+  calcSalary();
 }
  
 function calcSalary(){
@@ -714,18 +748,29 @@ function calcSalary(){
   if(document.getElementById('salTaxAmt')) document.getElementById('salTaxAmt').textContent='-'+taxAmt.toLocaleString('da-DK')+' DKK';
   document.getElementById('salNetto').textContent=netto.toLocaleString('da-DK')+' DKK';
   document.getElementById('salResult').style.display='block';
-  if(CU) sv('rate_'+CU.id+'_'+(CU.mode||'brutto'),{rate,tax});
 }
  
 function loadSalaryRate(){
   if(!CU) return;
   setupSalaryUI();
-  const saved=ld('rate_'+CU.id+'_'+(CU.mode||'brutto'),null);
+  const key = 'rate_'+CU.id+'_'+(CU.mode||'brutto');
+  const saved=ld(key,null);
   if(saved){
     const re=document.getElementById('salRate');
     const te=document.getElementById('salTax');
     if(re) re.value=saved.rate||'';
     if(te&&CU.mode!=='netto') te.value=saved.tax!==undefined?saved.tax:28;
+    // Pokaz ze stawka jest zapisana
+    const info=document.getElementById('salSavedInfo');
+    if(info){
+      info.style.display='block';
+      info.textContent='\u2705 Stawka: '+saved.rate+' DKK/h, podatek '+(saved.tax||0)+'%';
+    }
+    const btn=document.getElementById('salSaveBtn');
+    if(btn){
+      btn.textContent='\u270F Zmie\u0144 stawk\u0119';
+      btn.style.background='var(--grn)';
+    }
     calcSalary();
   }
 }
