@@ -552,18 +552,18 @@ function toggleNotif(type, enabled){
 function loadNotifSettings(){
   const card=document.getElementById('notifcard');
   if(!card) return;
-  // Pokaz zawsze – na przeglądarce pokaże info że tylko Android
   card.style.display='';
   const h=document.getElementById('notifHours');
   const r=document.getElementById('notifReport');
   if(h) h.checked=ld('notif_hours',false);
   if(r) r.checked=ld('notif_report',false);
-  // Jesli nie Android – pokazz info
   if(!window.AndroidBridge){
     const info=document.getElementById('notifAndroidInfo');
     if(info) info.style.display='';
   }
 }
+ 
+function tryAutoLogin(){
   const saved=ld('saved_login',null);
   if(!saved) return false;
   const workers=getWorkers();
