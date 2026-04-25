@@ -796,24 +796,26 @@ function loadSalaryRate(){
 }
 // ── HELPER: pobierz plik xlsx w Android WebView i przeglądarce ──
 function downloadXLSX(wb, fileName) {
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+  const dataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+ 
+  // Android: użyj natywnego mostu Java
+  if (window.AndroidBridge) {
+    window.AndroidBridge.saveFile(dataUrl, fileName);
+    return;
+  }
+ 
+  // Przeglądarka: standardowy download
   try {
-    // Metoda 1: standardowa (działa w przeglądarkach)
-    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
-    const dataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    setTimeout(() => {
-      // Metoda 2 (fallback Android WebView): window.location
-      try { window.location.href = dataUrl; } catch(e) {}
-    }, 300);
+    setTimeout(() => document.body.removeChild(a), 300);
   } catch(e) {
-    // Metoda 3: writeFile (desktop)
     try { XLSX.writeFile(wb, fileName); } catch(e2) {
-      alert('Błąd zapisu: ' + e2.message);
+      alert('Błąd zapisu: ' + e2);
     }
   }
 }
