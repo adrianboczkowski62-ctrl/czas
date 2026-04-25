@@ -496,7 +496,20 @@ function doLogin(mode){
   CU.mode=mode; // 'brutto' lub 'netto'
   showDash();
 }
-function logout(){ CU=null; showScreen('screen-login'); buildTiles(); }
+function logout(){
+  CU=null;
+  // Wyczysc pola kalkulatora
+  const re=document.getElementById('salRate');
+  const te=document.getElementById('salTax');
+  const result=document.getElementById('salResult');
+  const info=document.getElementById('salSavedInfo');
+  if(re) re.value='';
+  if(te) te.value='28';
+  if(result) result.style.display='none';
+  if(info) info.style.display='none';
+  showScreen('screen-login');
+  buildTiles();
+}
  
 // ── DASHBOARD ──
 async function showDash(){
@@ -753,24 +766,29 @@ function calcSalary(){
 function loadSalaryRate(){
   if(!CU) return;
   setupSalaryUI();
-  const key = 'rate_'+CU.id+'_'+(CU.mode||'brutto');
+  // Najpierw wyczysc pola i wynik
+  const re=document.getElementById('salRate');
+  const te=document.getElementById('salTax');
+  const info=document.getElementById('salSavedInfo');
+  const btn=document.getElementById('salSaveBtn');
+  const result=document.getElementById('salResult');
+  if(re) re.value='';
+  if(te) te.value='28';
+  if(info){ info.style.display='none'; info.textContent=''; }
+  if(btn){ btn.textContent='\uD83D\uDCBE Zapisz stawkę na stałe'; btn.style.background=''; }
+  if(result) result.style.display='none';
+ 
+  // Teraz zaladuj stawke tego konkretnego pracownika
+  const key='rate_'+CU.id+'_'+(CU.mode||'brutto');
   const saved=ld(key,null);
-  if(saved){
-    const re=document.getElementById('salRate');
-    const te=document.getElementById('salTax');
-    if(re) re.value=saved.rate||'';
+  if(saved && saved.rate){
+    if(re) re.value=saved.rate;
     if(te&&CU.mode!=='netto') te.value=saved.tax!==undefined?saved.tax:28;
-    // Pokaz ze stawka jest zapisana
-    const info=document.getElementById('salSavedInfo');
     if(info){
       info.style.display='block';
-      info.textContent='\u2705 Stawka: '+saved.rate+' DKK/h, podatek '+(saved.tax||0)+'%';
+      info.textContent='\u2705 Stawka: '+saved.rate+' DKK/h'+(CU.mode!=='netto'?', podatek '+(saved.tax||0)+'%':'');
     }
-    const btn=document.getElementById('salSaveBtn');
-    if(btn){
-      btn.textContent='\u270F Zmie\u0144 stawk\u0119';
-      btn.style.background='var(--grn)';
-    }
+    if(btn){ btn.textContent='\u270F Zmie\u0144 stawkę'; btn.style.background='var(--grn)'; }
     calcSalary();
   }
 }
