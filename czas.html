@@ -856,15 +856,24 @@ function dlExcel(){
 function sendReport(){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
-  if(!arr.length){alert('Brak wpis\u00f3w!');return;}
+  if(!arr.length){alert('Brak wpisów!');return;}
   dlExcel();
   const {tot}=buildXLS(arr,CU.name,w.label,w.dates);
   const byC={};
   arr.forEach(e=>{ byC[e.cli]=(byC[e.cli]||0)+e.mins; });
   let body='Weekly Report - '+CU.name+'\nWeek: '+w.label+' ('+w.dates+')\n\n';
   Object.keys(byC).forEach(c=>{ const h=Math.floor(byC[c]/60),m=byC[c]%60; body+=c+': '+h+'h '+m+'min\n'; });
-  body+='\nTOTAL: '+Math.floor(tot/60)+'h '+tot%60+'min\n\nPlease attach the Excel file.';
-  window.open('mailto:bw@awcompany.dk?subject='+encodeURIComponent('Report '+CU.name+' \u2013 Week '+w.label)+'&body='+encodeURIComponent(body));
+  body+='\nTOTAL: '+Math.floor(tot/60)+'h '+tot%60+'min\n\nPlease attach the Excel file from Downloads folder.';
+  const subject='Report '+CU.name+' \u2013 Week '+w.label;
+  const to='bw@awcompany.dk';
+ 
+  // Android: użyj natywnego mostu
+  if(window.AndroidBridge && window.AndroidBridge.openEmail){
+    window.AndroidBridge.openEmail(to, subject, body);
+    return;
+  }
+  // Przeglądarka: mailto link
+  window.open('mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body));
 }
 function dlMonthly(){
   const mv=document.getElementById('msel').value;
@@ -990,3 +999,4 @@ fetchClients();
 </script>
 </body>
 </html>
+ 
