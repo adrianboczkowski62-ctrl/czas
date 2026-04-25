@@ -205,22 +205,23 @@ select.inp option{background:#1e2230;color:#f0f2f7}
       </div>
     </div>
   </div>
-  <div class="card" id="notifcard" style="display:none">
+  <div class="card" id="notifcard">
     <h3>&#128276; Powiadomienia</h3>
-    <p style="color:var(--mut);font-size:.78rem;margin-bottom:14px">Tylko w aplikacji Android</p>
+    <p id="notifAndroidInfo" style="display:none;color:var(--acc);font-size:.78rem;margin-bottom:10px;background:rgba(232,197,71,.08);border-radius:8px;padding:8px 12px">&#9888; Powiadomienia dzia&#322;aj&#261; tylko w aplikacji Android</p>
+    <p style="color:var(--mut);font-size:.78rem;margin-bottom:14px">Przypomnienia o wpisaniu godzin i raporcie</p>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--s2);border-radius:10px;padding:12px 14px">
         <div>
           <div style="font-size:.9rem;font-weight:500">&#9200; Wpisz godziny (20:00)</div>
-          <div style="font-size:.75rem;color:var(--mut)">Pon-Sob codziennie o 20:00</div>
+          <div style="font-size:.75rem;color:var(--mut)">Pon&#8211;Sob codziennie o 20:00</div>
         </div>
         <input type="checkbox" id="notifHours" onchange="toggleNotif('hours',this.checked)"
           style="width:22px;height:22px;cursor:pointer;accent-color:var(--acc)">
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--s2);border-radius:10px;padding:12px 14px">
         <div>
-          <div style="font-size:.9rem;font-weight:500">&#128231; Wyślij raport (Niedziela)</div>
-          <div style="font-size:.75rem;color:var(--mut)">Co niedzielę o 20:00</div>
+          <div style="font-size:.9rem;font-weight:500">&#128231; Wy&#347;lij raport (Niedziela)</div>
+          <div style="font-size:.75rem;color:var(--mut)">Co niedziel&#281; o 20:00</div>
         </div>
         <input type="checkbox" id="notifReport" onchange="toggleNotif('report',this.checked)"
           style="width:22px;height:22px;cursor:pointer;accent-color:var(--acc)">
@@ -551,13 +552,16 @@ function toggleNotif(type, enabled){
 function loadNotifSettings(){
   const card=document.getElementById('notifcard');
   if(!card) return;
-  // Pokaz karte tylko w Android
-  if(window.AndroidBridge){
-    card.style.display='';
-    const h=document.getElementById('notifHours');
-    const r=document.getElementById('notifReport');
-    if(h) h.checked=ld('notif_hours',false);
-    if(r) r.checked=ld('notif_report',false);
+  // Pokaz zawsze – na przeglądarce pokaże info że tylko Android
+  card.style.display='';
+  const h=document.getElementById('notifHours');
+  const r=document.getElementById('notifReport');
+  if(h) h.checked=ld('notif_hours',false);
+  if(r) r.checked=ld('notif_report',false);
+  // Jesli nie Android – pokazz info
+  if(!window.AndroidBridge){
+    const info=document.getElementById('notifAndroidInfo');
+    if(info) info.style.display='';
   }
 }
   const saved=ld('saved_login',null);
