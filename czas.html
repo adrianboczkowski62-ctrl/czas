@@ -794,6 +794,30 @@ function loadSalaryRate(){
     calcSalary();
   }
 }
+// ── HELPER: pobierz plik xlsx w Android WebView i przeglądarce ──
+function downloadXLSX(wb, fileName) {
+  try {
+    // Metoda 1: standardowa (działa w przeglądarkach)
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+    const dataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => {
+      // Metoda 2 (fallback Android WebView): window.location
+      try { window.location.href = dataUrl; } catch(e) {}
+    }, 300);
+  } catch(e) {
+    // Metoda 3: writeFile (desktop)
+    try { XLSX.writeFile(wb, fileName); } catch(e2) {
+      alert('Błąd zapisu: ' + e2.message);
+    }
+  }
+}
+ 
 function buildXLS(entries,name,label,dates){
   const byC={};
   entries.forEach(e=>{ if(!byC[e.cli]) byC[e.cli]=[]; byC[e.cli].push(e); });
@@ -818,14 +842,14 @@ function buildXLS(entries,name,label,dates){
 function dlExcel(){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
-  if(!arr.length){alert('Brak wpis\u00f3w!');return;}
+  if(!arr.length){alert('Brak wpisów!');return;}
   const {data}=buildXLS(arr,CU.name,w.label,w.dates);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(data);
   ws['!cols']=[20,10,10,14,28].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Report');
-  const fd=w.dates.replace(/\s/g,'').replace(/\./g,'-').replace('–','-');
-  XLSX.writeFile(wb,'Report_'+CU.name+'_W'+w.wn+'_'+fd+'.xlsx');
+  const fd=w.dates.replace(/\s/g,'').replace(/\./g,'-').replace('\u2013','-');
+  downloadXLSX(wb,'Report_'+CU.name+'_W'+w.wn+'_'+fd+'.xlsx');
 }
 function sendReport(){
   const w=getWeek();
@@ -871,7 +895,7 @@ function dlMonthly(){
   const ws=XLSX.utils.aoa_to_sheet(data);
   ws['!cols']=[8,14,10,10,14,20,24].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,MN[mo-1]+' '+yr);
-  XLSX.writeFile(wb,'Report_'+CU.name+'_'+MN[mo-1]+'_'+yr+'.xlsx');
+  downloadXLSX(wb,'Report_'+CU.name+'_'+MN[mo-1]+'_'+yr+'.xlsx');
 }
  
 // ── CLIENTS SCREEN ──
