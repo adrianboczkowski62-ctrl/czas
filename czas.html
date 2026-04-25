@@ -730,15 +730,16 @@ function saveSalaryRate(){
   const rate = parseFloat(document.getElementById('salRate').value)||0;
   const tax = parseFloat(document.getElementById('salTax').value)||0;
   if(rate<=0){ alert('Wpisz stawkę godzinową!'); return; }
-  const key = 'rate_'+CU.id+'_'+(CU.mode||'brutto');
-  sv(key, {rate, tax});
+  // Zapisz w chmurze (CE) – osobno per pracownik i tryb
+  const key = 'salary_'+CU.id+'_'+(CU.mode||'brutto');
+  CE[key] = {rate, tax};
+  saveEntries(); // zapisz do JSONBin
   // Pokaz potwierdzenie
   const info = document.getElementById('salSavedInfo');
   info.style.display = 'block';
-  info.textContent = '\u2705 Zapisano: '+rate+' DKK/h, podatek '+tax+'% \u2013 kalkulator b\u0119dzie si\u0119 aktualizowa\u0107 automatycznie';
-  // Zmien przycisk
+  info.textContent = '\u2705 Zapisano: '+rate+' DKK/h, podatek '+tax+'%';
   const btn = document.getElementById('salSaveBtn');
-  btn.textContent = '\u2705 Stawka zapisana \u2013 zmie\u0144';
+  btn.textContent = '\u270F Zmie\u0144 stawkę';
   btn.style.background = 'var(--grn)';
   calcSalary();
 }
@@ -746,9 +747,10 @@ function saveSalaryRate(){
 function calcSalary(){
   const rateEl=document.getElementById('salRate');
   const taxEl=document.getElementById('salTax');
-  if(!rateEl) return;
+  if(!rateEl||!CU) return;
+  // Czytaj z pól (które są załadowane z CE)
   const rate=parseFloat(rateEl.value)||0;
-  const tax=CU&&CU.mode==='netto'?0:(parseFloat(taxEl?taxEl.value:0)||0);
+  const tax=CU.mode==='netto'?0:(parseFloat(taxEl?taxEl.value:0)||0);
   const ttlText=document.getElementById('ttl').textContent;
   const hMatch=ttlText.match(/(\d+)h/);
   const mMatch=ttlText.match(/(\d+)min/);
@@ -766,7 +768,7 @@ function calcSalary(){
 function loadSalaryRate(){
   if(!CU) return;
   setupSalaryUI();
-  // Najpierw wyczysc pola i wynik
+  // Wyczysc pola
   const re=document.getElementById('salRate');
   const te=document.getElementById('salTax');
   const info=document.getElementById('salSavedInfo');
@@ -778,9 +780,9 @@ function loadSalaryRate(){
   if(btn){ btn.textContent='\uD83D\uDCBE Zapisz stawkę na stałe'; btn.style.background=''; }
   if(result) result.style.display='none';
  
-  // Teraz zaladuj stawke tego konkretnego pracownika
-  const key='rate_'+CU.id+'_'+(CU.mode||'brutto');
-  const saved=ld(key,null);
+  // Wczytaj z chmury (CE)
+  const key='salary_'+CU.id+'_'+(CU.mode||'brutto');
+  const saved=CE[key];
   if(saved && saved.rate){
     if(re) re.value=saved.rate;
     if(te&&CU.mode!=='netto') te.value=saved.tax!==undefined?saved.tax:28;
