@@ -367,20 +367,41 @@ function getWorkers() {
 function saveWorkers(w) { sv('wv3',w); }
  
 // ── CLOUD CLIENTS ──
+async function saveClients(list) {
+  CC = list;
+  // Zawsze zapisz lokalnie jako backup
+  sv('cc_backup', list);
+  try {
+    const r = await fetch(URL_C, {
+      method:'PUT',
+      headers:HDR,
+      body:JSON.stringify({clients:list})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+  } catch(e) {
+    console.warn('saveClients cloud failed:', e);
+    // Dane sa w localStorage jako backup – przy nastepnym uruchomieniu zostana wgrane
+  }
+}
+ 
 async function fetchClients() {
   try {
     const r = await fetch(URL_C+'/latest',{headers:{'X-Master-Key':KEY}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
     const d = await r.json();
     CC = d.record.clients||[];
+    // Zaktualizuj lokalny backup
+    sv('cc_backup', CC);
   } catch(e) {
-    CC = ld('cc',[]).map(c=>typeof c==='string'?c:c.name);
-    if(!CC.length) CC = ['Hansen Byg','Nielsen VVS','Petersen El','Inny'];
+    // Uzyj lokalnego backupu
+    const backup = ld('cc_backup', null);
+    if(backup && backup.length) {
+      CC = backup;
+    } else {
+      CC = ld('cc',[]).map(c=>typeof c==='string'?c:c.name);
+      if(!CC.length) CC = ['Hansen Byg','Nielsen VVS','Petersen El','Inny'];
+    }
   }
-}
-async function saveClients(list) {
-  CC = list;
-  try { await fetch(URL_C,{method:'PUT',headers:HDR,body:JSON.stringify({clients:list})}); }
-  catch(e) { sv('cc',list); }
 }
  
 // ── CLOUD ENTRIES ──
@@ -976,7 +997,8 @@ function dlMonthly(){
 // ── CLIENTS SCREEN ──
 function showClientsScreen(){
   showScreen('screen-clients');
-  renderPCList();
+  document.getElementById('pclist').innerHTML='<p style="color:var(--mut);font-size:.85rem;text-align:center">\u23F3 \u0141adowanie klient\u00f3w...</p>';
+  fetchClients().then(()=>renderPCList());
 }
 function renderPCList(){
   const c=document.getElementById('pclist');
@@ -1067,3 +1089,4 @@ if(!tryAutoLogin()){
 </script>
 </body>
 </html>
+ 
