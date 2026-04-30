@@ -835,11 +835,24 @@ function editEntry(i){
   editIdx=i;
   // Wypelnij formularz danymi
   const sel=document.getElementById('iday');
-  for(let j=0;j<sel.options.length;j++) if(sel.options[j].value===e.day){sel.selectedIndex=j;break;}
+  for(let j=0;j<sel.options.length;j++){
+    if(sel.options[j].text===e.day||sel.options[j].value===e.day){sel.selectedIndex=j;break;}
+  }
   document.getElementById('ist').value=e.st;
   document.getElementById('ien').value=e.en;
+  // Klient - szukaj po value i text
   const cs=document.getElementById('icli');
-  for(let j=0;j<cs.options.length;j++) if(cs.options[j].value===e.cli){cs.selectedIndex=j;break;}
+  let found=false;
+  for(let j=0;j<cs.options.length;j++){
+    if(cs.options[j].value===e.cli||cs.options[j].text===e.cli){cs.selectedIndex=j;found=true;break;}
+  }
+  // Jesli klient nie istnieje na liscie – dodaj tymczasowo
+  if(!found && e.cli){
+    const opt=document.createElement('option');
+    opt.value=e.cli; opt.text=e.cli;
+    cs.appendChild(opt);
+    cs.value=e.cli;
+  }
   document.getElementById('inote').value=e.note||'';
   // Zmien przycisk
   const btn=document.getElementById('addbtn');
@@ -851,19 +864,19 @@ function editEntry(i){
  
 function saveEdit(){
   const w=getWeek();
-  const day=document.getElementById('iday').value;
+  const dayEl=document.getElementById('iday');
+  const day=dayEl.options[dayEl.selectedIndex].text||dayEl.value;
   const st=document.getElementById('ist').value;
   const en=document.getElementById('ien').value;
-  const cli=document.getElementById('icli').value;
+  const cliEl=document.getElementById('icli');
+  const cli=cliEl.value||cliEl.options[cliEl.selectedIndex]?.text||'';
   const note=document.getElementById('inote').value;
   if(!st||!en){alert('Podaj godziny!');return;}
   const [sh,sm]=st.split(':').map(Number);
   const [eh,em]=en.split(':').map(Number);
   const mins=(eh*60+em)-(sh*60+sm);
   if(mins<=0){alert('Koniec musi by\u0107 p\u00f3\u017aniejszy ni\u017c start!');return;}
-  if(!confirm('Czy na pewno chcesz zapisa\u0107 zmiany w tym wpisie?')){
-    return;
-  }
+  if(!confirm('Czy na pewno chcesz zapisa\u0107 zmiany w tym wpisie?')){return;}
   const arr=getE(CU.id,w.key);
   arr[editIdx]={day,st,en,cli,note,mins};
   arr.sort((a,b)=>{
