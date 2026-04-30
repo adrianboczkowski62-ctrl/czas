@@ -888,21 +888,29 @@ function renderEntries(){
   const tb=document.getElementById('etbl');
   tb.innerHTML='';
   let tot=0;
-  const isCurrentWeek=weekOffset===0;
+ 
+  // Oblicz daty dla kazdego dnia tygodnia
+  const dayDates={};
+  DAY_ORDER.forEach((day,i)=>{
+    const d=new Date(w.monObj||w.mon);
+    d.setDate(d.getDate()+i);
+    dayDates[day]=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+  });
+ 
   if(!arr.length){
     tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:20px;font-size:.85rem">Brak wpis\u00f3w w tym tygodniu</td></tr>';
   }
   arr.forEach((e,i)=>{
     const h=Math.floor(e.mins/60),m=e.mins%60;
     const tr=document.createElement('tr');
+    const dateStr=dayDates[e.day]||'';
     const editBtn='<button class="btn bs bsm" onclick="editEntry('+i+')" style="color:var(--acc2);padding:4px 8px;margin-right:4px">\u270F</button>';
     const delBtn='<button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 8px">\u2715</button>';
-    tr.innerHTML='<td>'+e.day+'</td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td style="white-space:nowrap">'+editBtn+delBtn+'</td>';
+    tr.innerHTML='<td><div style="font-weight:600">'+e.day+'</div><div style="font-size:.72rem;color:var(--mut)">'+dateStr+'</div></td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td style="white-space:nowrap">'+editBtn+delBtn+'</td>';
     tb.appendChild(tr);
     tot+=e.mins;
   });
   document.getElementById('ttl').textContent=Math.floor(tot/60)+'h '+tot%60+'min';
-  // Odswież kalkulator po zmianie godzin
   calcSalary();
 }
  
