@@ -90,6 +90,44 @@ select.inp option{background:#1e2230;color:#f0f2f7}
 </head>
 <body>
  
+<!-- WELCOME SCREEN - pokazuje sie raz po aktualizacji -->
+<div class="overlay" id="welcomeModal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="border-radius:24px;max-width:420px;text-align:left;max-height:90vh;overflow-y:auto">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.5rem;margin-bottom:8px">&#127881;</div>
+      <h2 style="font-size:1.3rem">Co nowego w AbbNovitas?</h2>
+      <p style="font-size:.8rem;color:var(--mut)">Aktualizacja Kwiecień 2026</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#9999;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Edycja godzin we wszystkich tygodniach</div><div style="font-size:.78rem;color:var(--mut)">Mo&#380;esz teraz edytowa&#263; i dodawa&#263; godziny w poprzednich tygodniach</div></div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#128197;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Raport z dowolnego okresu</div><div style="font-size:.78rem;color:var(--mut)">Wybierz daty Od&#8211;Do i pobierz Excel np. od 20.04 do 20.05</div></div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#10003;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Potwierdzenia przy zapisie i usuwaniu</div><div style="font-size:.78rem;color:var(--mut)">Ka&#380;da akcja wy&#347;wietla komunikat potwierdzaj&#261;cy</div></div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#128231;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">W&#322;asny adres email ksi&#281;gowej</div><div style="font-size:.78rem;color:var(--mut)">Wpisz adres email raz i zapisz go na sta&#322;e w swoim profilu</div></div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#128273;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Logowanie bez has&#322;a</div><div style="font-size:.78rem;color:var(--mut)">Kliknij kafelek i od razu wybierz tryb Brutto lub Netto</div></div>
+      </div>
+      <div style="background:var(--s2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:1.3rem;flex-shrink:0">&#128276;</span>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Powiadomienia (aplikacja Android)</div><div style="font-size:.78rem;color:var(--mut)">W&#322;&#261;cz przypomnienia o godz. 20:00 o wpisaniu godzin i raporcie</div></div>
+      </div>
+    </div>
+    <button class="btn bp" onclick="closeWelcome()" style="width:100%">&#128077; Rozumiem, zaczynamy!</button>
+  </div>
+</div>
+ 
 <!-- LOGIN -->
 <div id="screen-login" class="screen active">
   <div class="logo">Abb<span>Novitas</span></div>
@@ -232,7 +270,13 @@ select.inp option{background:#1e2230;color:#f0f2f7}
     <h3>&#128231; Raport Excel</h3>
     <p style="color:var(--mut);font-size:.85rem;margin-bottom:16px">Pobierz raport jako plik Excel.</p>
     <div id="emailSection">
-      <p style="color:var(--mut);font-size:.82rem;margin-bottom:10px">Wy&#347;lij na <b>bw@awcompany.dk</b></p>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Adres email ksi&#281;gowej</label>
+        <div style="display:flex;gap:8px">
+          <input type="email" id="reportEmail" class="inp" placeholder="np. ksiegowa@firma.dk">
+          <button class="btn bs bsm" onclick="saveReportEmail()" style="flex-shrink:0">&#128190;</button>
+        </div>
+      </div>
     </div>
     <div style="border-bottom:1px solid var(--brd);padding-bottom:16px;margin-bottom:16px">
       <p style="font-size:.8rem;color:var(--acc);font-family:'Syne',sans-serif;margin-bottom:10px">RAPORT TYGODNIOWY</p>
@@ -247,6 +291,20 @@ select.inp option{background:#1e2230;color:#f0f2f7}
         <input type="month" id="msel" class="inp" style="max-width:180px;min-width:140px">
         <button class="btn bg" onclick="dlMonthly()" style="flex:1;min-width:140px">&#8595; Pobierz Excel</button>
       </div>
+    </div>
+    <div style="border-top:1px solid var(--brd);padding-top:16px;margin-top:16px">
+      <p style="font-size:.8rem;color:var(--acc);font-family:'Syne',sans-serif;margin-bottom:10px">RAPORT Z WYBRANEGO OKRESU</p>
+      <div class="frow" style="margin-bottom:10px">
+        <div class="fg">
+          <label>Od</label>
+          <input type="date" id="rangeFrom" class="inp">
+        </div>
+        <div class="fg">
+          <label>Do</label>
+          <input type="date" id="rangeTo" class="inp">
+        </div>
+      </div>
+      <button class="btn bg" onclick="dlRangeReport()" style="width:100%">&#8595; Pobierz Excel (wybrany okres)</button>
     </div>
   </div>
 </div>
@@ -284,27 +342,35 @@ select.inp option{background:#1e2230;color:#f0f2f7}
 <div class="overlay" id="pmod">
   <div class="modal">
     <h2 id="ptit">Zaloguj si&#281;</h2>
-    <p id="psub">Podaj swoje has&#322;o</p>
-    <input type="password" id="pin" class="pi" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="20" onkeydown="if(event.key==='Enter')checkPin()">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;margin-top:-6px">
-      <input type="checkbox" id="rememberMe" style="width:18px;height:18px;cursor:pointer;accent-color:var(--acc)">
-      <label for="rememberMe" style="font-size:.85rem;color:var(--mut);cursor:pointer">Zapami&#281;taj mnie na tym urz&#261;dzeniu</label>
+    <p id="psub">Wybierz tryb pracy</p>
+    <div id="pinSection" style="display:none">
+      <input type="password" id="pin" class="pi" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="20" onkeydown="if(event.key==='Enter')checkPin()">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;margin-top:-6px">
+        <input type="checkbox" id="rememberMe" style="width:18px;height:18px;cursor:pointer;accent-color:var(--acc)">
+        <label for="rememberMe" style="font-size:.85rem;color:var(--mut);cursor:pointer">Zapami&#281;taj mnie na tym urz&#261;dzeniu</label>
+      </div>
+      <button class="btn bp" onclick="checkPin()">Dalej &#8594;</button>
     </div>
-    <button class="btn bp" onclick="checkPin()">Dalej &#8594;</button>
-    <!-- Wybor trybu – pojawia sie po poprawnym hasle -->
-    <div id="modeChoice" style="display:none;margin-top:16px">
-      <p style="color:var(--mut);font-size:.85rem;margin-bottom:12px">Wybierz tryb pracy:</p>
+    <div id="modeChoice" style="display:none;margin-top:8px">
+      <!-- Podsumowanie tygodnia -->
+      <div id="modalSummary" style="margin-bottom:14px;display:flex;flex-direction:column;gap:8px"></div>
       <div style="display:flex;gap:10px">
-        <button class="btn bp" style="flex:1;flex-direction:column;gap:4px;padding:16px 10px" onclick="doLogin('brutto')">
-          <span style="font-size:1.2rem">&#128181;</span>
-          <span>Brutto</span>
-          <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + podatek</span>
-        </button>
-        <button class="btn bs" style="flex:1;flex-direction:column;gap:4px;padding:16px 10px;border-color:var(--grn);color:var(--grn)" onclick="doLogin('netto')">
-          <span style="font-size:1.2rem">&#128176;</span>
-          <span>Netto</span>
-          <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + stawka</span>
-        </button>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <button class="btn bp" style="flex-direction:column;gap:4px;padding:16px 10px;width:100%" onclick="doLogin('brutto')">
+            <span style="font-size:1.2rem">&#128181;</span>
+            <span>Brutto</span>
+            <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + podatek</span>
+          </button>
+          <div id="summaryBrutto" style="background:var(--s2);border-radius:10px;padding:10px;font-size:.75rem;min-height:40px"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <button class="btn bs" style="flex-direction:column;gap:4px;padding:16px 10px;border-color:var(--grn);color:var(--grn);width:100%" onclick="doLogin('netto')">
+            <span style="font-size:1.2rem">&#128176;</span>
+            <span>Netto</span>
+            <span style="font-size:.72rem;opacity:.7;font-family:DM Sans,sans-serif;font-weight:400">Godziny + stawka</span>
+          </button>
+          <div id="summaryNetto" style="background:var(--s2);border-radius:10px;padding:10px;font-size:.75rem;min-height:40px"></div>
+        </div>
       </div>
     </div>
     <p class="err" id="perr"></p>
@@ -505,45 +571,63 @@ function buildTiles() {
  
 // ── LOGIN ──
 let LT=null;
+function buildModalSummary(workerId){
+  const w=getWeekByOffset(0);
+  ['brutto','netto'].forEach(mode=>{
+    const el=document.getElementById('summary'+mode.charAt(0).toUpperCase()+mode.slice(1));
+    if(!el) return;
+    // Pobierz wpisy z biezacego tygodnia
+    const key=workerId+'_'+mode+'_'+w.key;
+    const arr=CE[key]||[];
+    if(!arr.length){
+      el.innerHTML='<span style="color:var(--mut)">Brak wpis\u00f3w w tym tygodniu</span>';
+      return;
+    }
+    // Grupuj po kliencie
+    const byC={};
+    arr.forEach(e=>{ byC[e.cli]=(byC[e.cli]||0)+e.mins; });
+    let html='';
+    let tot=0;
+    Object.keys(byC).forEach(cli=>{
+      const h=Math.floor(byC[cli]/60),m=byC[cli]%60;
+      html+='<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--txt)">'+cli+'</span><span style="color:var(--acc);font-weight:700">'+h+'h'+(m?'&nbsp;'+m+'m':'')+'</span></div>';
+      tot+=byC[cli];
+    });
+    const th=Math.floor(tot/60),tm=tot%60;
+    html+='<div style="border-top:1px solid var(--brd);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between"><span style="color:var(--mut)">\u0141\u0105cznie</span><span style="color:var(--acc2);font-weight:700">'+th+'h'+(tm?'&nbsp;'+tm+'m':'')+'</span></div>';
+    el.innerHTML=html;
+  });
+}
+ 
 function openLogin(id){
   const w=getWorkers().find(x=>x.id===id);
   if(!w||!w.active) return;
   LT=id;
   document.getElementById('ptit').textContent='Witaj, '+w.name+'!';
-  document.getElementById('psub').textContent='Podaj swoje has\u0142o';
-  document.getElementById('pin').value='';
-  document.getElementById('perr').textContent='';
+  document.getElementById('psub').textContent='Tydzie\u0144 '+getWeek().label+' \u00b7 '+getWeek().dates;
+  document.getElementById('pinSection').style.display='none';
+  document.getElementById('modeChoice').style.display='block';
   document.getElementById('pmod').classList.add('open');
-  setTimeout(()=>document.getElementById('pin').focus(),100);
-}
-function closeModal(){ document.getElementById('pmod').classList.remove('open'); LT=null; document.getElementById('modeChoice').style.display='none'; }
- 
-function checkPin(){
-  if(!LT) return;
-  const w=getWorkers().find(x=>x.id===LT);
-  if(!w){ document.getElementById('perr').textContent='B\u0142\u0105d \u2013 od\u015bwie\u017c stron\u0119'; return; }
-  const p=document.getElementById('pin').value;
-  if(p===w.pwd){
-    document.getElementById('perr').textContent='';
-    document.getElementById('modeChoice').style.display='block';
-    document.querySelector('#pmod .btn.bp').style.display='none';
+  // Zaladuj dane jesli potrzeba i zbuduj podsumowanie
+  if(Object.keys(CE).length>0){
+    buildModalSummary(id);
   } else {
-    document.getElementById('perr').textContent='\u274C Nieprawid\u0142owe has\u0142o';
+    fetchEntries().then(()=>buildModalSummary(id));
   }
+}
+function closeModal(){
+  document.getElementById('pmod').classList.remove('open');
+  LT=null;
+  document.getElementById('modeChoice').style.display='none';
+  document.getElementById('pinSection').style.display='none';
 }
  
 function doLogin(mode){
   if(!LT) return;
   const w=getWorkers().find(x=>x.id===LT);
   if(!w) return;
-  // Zapamietaj login jesli zaznaczono
-  const rem=document.getElementById('rememberMe');
-  if(rem&&rem.checked){
-    sv('saved_login',{id:LT,mode});
-  }
   document.getElementById('pmod').classList.remove('open');
   document.getElementById('modeChoice').style.display='none';
-  document.querySelector('#pmod .btn.bp').style.display='';
   CU=w; CU.mode=mode;
   showDash();
 }
@@ -617,8 +701,19 @@ async function showDash(){
   renderEntries();
   loadSalaryRate();
   loadNotifSettings();
+  loadReportEmail();
   const mn=document.getElementById('msel');
   if(mn){const n=new Date();mn.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
+  // Domyslny zakres: od 20 poprzedniego do 20 biezacego
+  const rf=document.getElementById('rangeFrom');
+  const rt=document.getElementById('rangeTo');
+  if(rf&&rt){
+    const now=new Date();
+    const to=new Date(now.getFullYear(),now.getMonth(),20);
+    const from=new Date(now.getFullYear(),now.getMonth()-1,20);
+    rf.value=from.toISOString().split('T')[0];
+    rt.value=to.toISOString().split('T')[0];
+  }
 }
  
 function updateWeekNav(){
@@ -630,11 +725,16 @@ function updateWeekNav(){
   document.getElementById('dname').innerHTML='Witaj, '+CU.name+'! '+modeBadge;
   document.getElementById('dweek').textContent='Tydzie\u0144 '+w.label+' \u00b7 '+w.dates;
   const lbl=document.getElementById('weekLabel');
-  if(lbl) lbl.textContent=weekOffset===0?'Biezacy tydzie\u0144':(weekOffset<0?Math.abs(weekOffset)+' tyg. wstecz':'');
+  if(lbl) lbl.textContent=weekOffset===0?'Bie\u017c\u0105cy tydzie\u0144':(weekOffset<0?Math.abs(weekOffset)+' tyg. wstecz':'');
   const nxt=document.getElementById('wnext');
   if(nxt){nxt.disabled=weekOffset>=0;nxt.style.opacity=weekOffset>=0?'0.3':'1';}
+  // Zawsze pokazuj formularz – mozna edytowac kazdy tydzien
   const addCard=document.getElementById('addcard');
-  if(addCard) addCard.style.display=weekOffset===0?'':'none';
+  if(addCard){
+    addCard.style.display='';
+    const h=addCard.querySelector('h3');
+    if(h) h.textContent=(weekOffset===0?'\uD83D\uDCCB Dodaj godziny dnia':'\uD83D\uDCCB Dodaj/edytuj godziny \u2013 Tydzie\u0144 '+w.label);
+  }
 }
  
 function weekPrev(){ weekOffset--; updateWeekNav(); renderEntries(); }
@@ -673,6 +773,7 @@ function addEntry(){
   btn.textContent='\u2601 Zapisywanie...';
   btn.disabled=true;
   setTimeout(()=>{btn.textContent='+ Dodaj wpis';btn.disabled=false;},1800);
+  showToast('\u2705 Dane zosta\u0142y zapisane!');
   renderEntries();
 }
  
@@ -682,11 +783,16 @@ let undoTimer=null;
 function delEntry(i){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
+  const e=arr[i];
+  const h=Math.floor(e.mins/60),m=e.mins%60;
+  if(!confirm('Czy na pewno chcesz usun\u0105\u0107 ten wpis?\n\n'+e.day+' '+e.st+'\u2013'+e.en+' ('+h+'h '+m+'m)\nKlient: '+e.cli)){
+    return;
+  }
   lastDeleted={entry:{...arr[i]},idx:i,wkey:w.key};
   arr.splice(i,1);
   setE(CU.id,w.key,arr);
+  showToast('\u{1F5D1} Wpis usuni\u0119ty','#ef4444');
   renderEntries();
-  // Pokaz przycisk cofnij
   showUndo();
 }
  
@@ -755,6 +861,9 @@ function saveEdit(){
   const [eh,em]=en.split(':').map(Number);
   const mins=(eh*60+em)-(sh*60+sm);
   if(mins<=0){alert('Koniec musi by\u0107 p\u00f3\u017aniejszy ni\u017c start!');return;}
+  if(!confirm('Czy na pewno chcesz zapisa\u0107 zmiany w tym wpisie?')){
+    return;
+  }
   const arr=getE(CU.id,w.key);
   arr[editIdx]={day,st,en,cli,note,mins};
   arr.sort((a,b)=>{
@@ -763,13 +872,13 @@ function saveEdit(){
     return a.st.localeCompare(b.st);
   });
   setE(CU.id,w.key,arr);
-  // Reset przycisku
   const btn=document.getElementById('addbtn');
   btn.textContent='+ Dodaj wpis';
   btn.style.background='';
   btn.onclick=addEntry;
   document.getElementById('inote').value='';
   editIdx=null;
+  showToast('\u2705 Wpis zosta\u0142 zaktualizowany!');
   renderEntries();
 }
  
@@ -786,8 +895,8 @@ function renderEntries(){
   arr.forEach((e,i)=>{
     const h=Math.floor(e.mins/60),m=e.mins%60;
     const tr=document.createElement('tr');
-    const editBtn=isCurrentWeek?'<button class="btn bs bsm" onclick="editEntry('+i+')" style="color:var(--acc2);padding:4px 8px;margin-right:4px">\u270F</button>':'';
-    const delBtn=isCurrentWeek?'<button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 8px">\u2715</button>':'';
+    const editBtn='<button class="btn bs bsm" onclick="editEntry('+i+')" style="color:var(--acc2);padding:4px 8px;margin-right:4px">\u270F</button>';
+    const delBtn='<button class="btn bs bsm" onclick="delEntry('+i+')" style="color:var(--red);padding:4px 8px">\u2715</button>';
     tr.innerHTML='<td>'+e.day+'</td><td class="hc">'+e.st+'\u2013'+e.en+' <small style="color:var(--mut)">('+h+'h '+m+'m)</small></td><td><span class="tag">'+e.cli+'</span></td><td style="color:var(--mut);font-size:.82rem">'+(e.note||'\u2013')+'</td><td style="white-space:nowrap">'+editBtn+delBtn+'</td>';
     tb.appendChild(tr);
     tot+=e.mins;
@@ -797,7 +906,22 @@ function renderEntries(){
   calcSalary();
 }
  
-// ── KALKULATOR WYNAGRODZENIA ──
+// ── TOAST ──
+function showToast(msg, color){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);border-radius:12px;padding:12px 24px;font-family:Syne,sans-serif;font-weight:700;font-size:.9rem;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .3s;white-space:nowrap;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.style.background=color||'var(--grn)';
+  t.style.color='#0d0f14';
+  t.textContent=msg;
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.opacity='0',2500);
+}
 function setupSalaryUI(){
   if(!CU) return;
   const isNetto = CU.mode==='netto';
@@ -938,28 +1062,46 @@ function dlExcel(){
   const fd=w.dates.replace(/\s/g,'').replace(/\./g,'-').replace('\u2013','-');
   downloadXLSX(wb,'Report_'+CU.name+'_W'+w.wn+'_'+fd+'.xlsx');
 }
+function saveReportEmail(){
+  const email=document.getElementById('reportEmail').value.trim();
+  if(!email){alert('Wpisz adres email!');return;}
+  sv('report_email_'+CU.id, email);
+  alert('\u2705 Email zapisany: '+email);
+}
+ 
+function loadReportEmail(){
+  if(!CU) return;
+  const saved=ld('report_email_'+CU.id,'');
+  const el=document.getElementById('reportEmail');
+  if(el) el.value=saved;
+}
+ 
+function getReportEmail(){
+  if(!CU) return '';
+  return ld('report_email_'+CU.id,'');
+}
+ 
 function sendReport(){
   const w=getWeek();
   const arr=getE(CU.id,w.key);
   if(!arr.length){alert('Brak wpisów!');return;}
+  const to=getReportEmail();
+  if(!to){alert('Najpierw wpisz i zapisz adres email księgowej!');return;}
   dlExcel();
   const {tot}=buildXLS(arr,CU.name,w.label,w.dates);
   const byC={};
   arr.forEach(e=>{ byC[e.cli]=(byC[e.cli]||0)+e.mins; });
   let body='Weekly Report - '+CU.name+'\nWeek: '+w.label+' ('+w.dates+')\n\n';
   Object.keys(byC).forEach(c=>{ const h=Math.floor(byC[c]/60),m=byC[c]%60; body+=c+': '+h+'h '+m+'min\n'; });
-  body+='\nTOTAL: '+Math.floor(tot/60)+'h '+tot%60+'min\n\nPlease attach the Excel file from Downloads folder.';
+  body+='\nTOTAL: '+Math.floor(tot/60)+'h '+tot%60+'min\n\nPlease attach the Excel file.';
   const subject='Report '+CU.name+' \u2013 Week '+w.label;
-  const to='bw@awcompany.dk';
- 
-  // Android: użyj natywnego mostu
   if(window.AndroidBridge && window.AndroidBridge.openEmail){
     window.AndroidBridge.openEmail(to, subject, body);
     return;
   }
-  // Przeglądarka: mailto link
   window.open('mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body));
 }
+ 
 function dlMonthly(){
   const mv=document.getElementById('msel').value;
   if(!mv){alert('Wybierz miesi\u0105c!');return;}
@@ -992,6 +1134,88 @@ function dlMonthly(){
   ws['!cols']=[8,14,10,10,14,20,24].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,MN[mo-1]+' '+yr);
   downloadXLSX(wb,'Report_'+CU.name+'_'+MN[mo-1]+'_'+yr+'.xlsx');
+}
+ 
+function dlRangeReport(){
+  const fromVal=document.getElementById('rangeFrom').value;
+  const toVal=document.getElementById('rangeTo').value;
+  if(!fromVal||!toVal){alert('Wybierz datę Od i Do!');return;}
+ 
+  const fromDate=new Date(fromVal);
+  const toDate=new Date(toVal);
+  toDate.setHours(23,59,59);
+ 
+  if(fromDate>toDate){alert('Data Od musi być wcześniejsza niż Do!');return;}
+ 
+  // Zbierz wszystkie tygodnie które mają wpisy w tym zakresie
+  const allEntries=[];
+  Object.keys(CE).forEach(key=>{
+    if(!key.startsWith(CU.id+'_'+(CU.mode||'brutto')+'_')) return;
+    const arr=CE[key]||[];
+    // Pobierz datę poniedzialku tego tygodnia z klucza np "2026_W17"
+    const match=key.match(/(\d{4})_W(\d+)$/);
+    if(!match) return;
+    const yr=parseInt(match[1]);
+    const wn=parseInt(match[2]);
+    // Oblicz poniedziałek tego tygodnia
+    const jan4=new Date(yr,0,4);
+    const mon=new Date(jan4);
+    mon.setDate(jan4.getDate()-((jan4.getDay()+6)%7)+(wn-1)*7);
+ 
+    arr.forEach(e=>{
+      // Oblicz datę wpisu (poniedziałek + offset dnia)
+      const dayOffset=DAY_ORDER.indexOf(e.day);
+      const entryDate=new Date(mon);
+      entryDate.setDate(mon.getDate()+(dayOffset>=0?dayOffset:0));
+      if(entryDate>=fromDate && entryDate<=toDate){
+        allEntries.push({...e, entryDate, wn, yr});
+      }
+    });
+  });
+ 
+  if(!allEntries.length){alert('Brak wpisów w wybranym okresie!');return;}
+ 
+  // Sortuj po dacie
+  allEntries.sort((a,b)=>a.entryDate-b.entryDate);
+ 
+  const fmt=d=>String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+  const periodLabel=fmt(fromDate)+' \u2013 '+fmt(toDate);
+ 
+  const byC={};
+  allEntries.forEach(e=>{ if(!byC[e.cli]) byC[e.cli]=[]; byC[e.cli].push(e); });
+ 
+  const data=[
+    ['Report \u2013 '+CU.name],
+    ['Period: '+periodLabel],
+    []
+  ];
+ 
+  let grandTotal=0;
+  Object.keys(byC).forEach(cli=>{
+    data.push(['CLIENT: '+cli]);
+    data.push(['Date','Day','Start','End','Hours','Note']);
+    let cm=0;
+    byC[cli].forEach(e=>{
+      const h=Math.floor(e.mins/60),m=e.mins%60;
+      data.push([fmt(e.entryDate),e.day,e.st,e.en,parseFloat((h+m/60).toFixed(2)),e.note||'']);
+      cm+=e.mins;
+    });
+    data.push(['Total '+cli,'','','',parseFloat((Math.floor(cm/60)+cm%60/60).toFixed(2)),'']);
+    data.push([]);
+    grandTotal+=cm;
+  });
+ 
+  data.push(['\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501','','','','','']);
+  data.push(['TOTAL ALL CLIENTS','','','',parseFloat((Math.floor(grandTotal/60)+grandTotal%60/60).toFixed(2)),'']);
+ 
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[12,14,10,10,14,24].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Report');
+ 
+  const safeFrom=fromVal.replace(/-/g,'');
+  const safeTo=toVal.replace(/-/g,'');
+  downloadXLSX(wb,'Report_'+CU.name+'_'+safeFrom+'_'+safeTo+'.xlsx');
 }
  
 // ── CLIENTS SCREEN ──
@@ -1079,14 +1303,22 @@ async function acDel(i){ const l=CC.filter((_,x)=>x!==i); await saveClients(l); 
 // ── SCREEN ──
 function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
  
+function closeWelcome(){
+  document.getElementById('welcomeModal').style.display='none';
+  sv('welcome_seen_v2', true);
+}
+ 
+function showWelcomeIfNew(){
+  const seen=ld('welcome_seen_v2', false);
+  if(!seen){
+    document.getElementById('welcomeModal').style.display='flex';
+  }
+}
+ 
 // ── INIT ──
 buildTiles();
 fetchClients();
-// Sprawdz czy jest zapamietany login
-if(!tryAutoLogin()){
-  fetchClients();
-}
+showWelcomeIfNew();
 </script>
 </body>
 </html>
- 
